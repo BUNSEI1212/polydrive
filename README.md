@@ -42,20 +42,14 @@ git clone https://github.com/BUNSEI1212/polydrive.git
 cd polydrive
 pip install -e .
 
-# Or install from PyPI (when available)
-# pip install polydrive
-
 # Check file encodings
 polydrive i18n check-encoding examples/bad_encoding/ --require-utf8
 
 # Detect hardcoded CJK in C/C++ source
 polydrive i18n detect-hardcoded examples/cpp_project/ --lang cpp
 
-# Import a TBX glossary
+# Import a multilingual glossary
 polydrive glossary import examples/automotive_terms.csv
-
-# Check terminology consistency (requires TBX format)
-# polydrive glossary check terms.tbx --lang-pair en:zh
 
 # Generate pseudo-localized resources
 polydrive i18n pseudo-localize examples/locales/en.json --mode expand+cjk
@@ -63,11 +57,23 @@ polydrive i18n pseudo-localize examples/locales/en.json --mode expand+cjk
 # Analyze a defect report
 polydrive defect analyze --input examples/bug_report_zh.json
 
-# Validate Qt translations
-polydrive i18n validate-qt translations/app_zh_CN.ts
+# Start REST API server
+polydrive serve --port 8080
+```
+
+See [examples/README.md](examples/README.md) for detailed demo instructions.
+
+## More Commands
+
+```bash
+# Terminology consistency check (requires TBX format)
+polydrive glossary check terms.tbx --lang-pair en:zh
 
 # Translate with glossary enforcement
 polydrive mt translate --text "Bremsfehler erkannt" --from de --to en --glossary terms.tbx
+
+# Validate Qt translations
+polydrive i18n validate-qt translations/app_zh_CN.ts
 
 # Check Gherkin feature sync across languages
 polydrive trace sync-gherkin --base en --compare zh,de --features tests/
@@ -80,9 +86,6 @@ polydrive trace aspice-evidence --project .
 
 # View quality metrics
 polydrive metrics summary --input metrics.json
-
-# Start REST API server
-polydrive serve --port 8080
 ```
 
 ## Architecture

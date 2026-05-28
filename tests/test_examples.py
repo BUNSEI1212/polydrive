@@ -19,9 +19,7 @@ class TestDefectAnalyzeExample:
     """Test defect analysis with the example bug report."""
 
     def test_parse_bug_report(self) -> None:
-        data = json.loads(
-            (EXAMPLES / "bug_report_zh.json").read_text(encoding="utf-8")
-        )
+        data = json.loads((EXAMPLES / "bug_report_zh.json").read_text(encoding="utf-8"))
         report = DefectReport.model_validate(data)
         assert report.id == "BUG-2024-0158"
         assert report.expected_behavior is not None
@@ -30,9 +28,7 @@ class TestDefectAnalyzeExample:
         assert report.severity == "high"
 
     def test_analyze_bug_report(self) -> None:
-        data = json.loads(
-            (EXAMPLES / "bug_report_zh.json").read_text(encoding="utf-8")
-        )
+        data = json.loads((EXAMPLES / "bug_report_zh.json").read_text(encoding="utf-8"))
         report = DefectReport.model_validate(data)
         analyzer = DefectAnalyzer()
         result = analyzer.analyze(report)
@@ -65,9 +61,7 @@ class TestGlossaryImportExample:
 
     def test_tell_tale_is_regulatory(self) -> None:
         glossary = import_csv(EXAMPLES / "automotive_terms.csv")
-        tt = next(
-            (e for e in glossary.entries if e.id == "tell_tale"), None
-        )
+        tt = next((e for e in glossary.entries if e.id == "tell_tale"), None)
         assert tt is not None
         assert tt.category.value == "regulatory"
 
@@ -84,14 +78,10 @@ class TestI18nDetectHardcodedExample:
         assert has_chinese
 
     def test_detect_japanese_strings(self) -> None:
-        issues = detect_hardcoded(
-            EXAMPLES / "cpp_project" / "instrument_cluster.cpp"
-        )
+        issues = detect_hardcoded(EXAMPLES / "cpp_project" / "instrument_cluster.cpp")
         assert len(issues) > 0
         texts = [i.text for i in issues]
-        has_japanese = any(
-            any("぀" <= c <= "ヿ" for c in t) for t in texts
-        )
+        has_japanese = any(any("぀" <= c <= "ヿ" for c in t) for t in texts)
         assert has_japanese
 
     def test_detect_across_directory(self) -> None:
@@ -119,9 +109,7 @@ class TestExampleFilesExist:
         assert (EXAMPLES / path).is_file(), f"Missing example file: {path}"
 
     def test_bug_report_is_valid_json(self) -> None:
-        data = json.loads(
-            (EXAMPLES / "bug_report_zh.json").read_text(encoding="utf-8")
-        )
+        data = json.loads((EXAMPLES / "bug_report_zh.json").read_text(encoding="utf-8"))
         assert "id" in data
         assert "title" in data
         assert "expected_behavior" in data

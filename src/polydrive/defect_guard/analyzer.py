@@ -12,7 +12,16 @@ from polydrive.core.models import DefectQualityResult
 from polydrive.core.models import DefectReport
 from polydrive.core.models import Glossary
 
-_VALID_SEVERITIES = {"critical", "major", "minor", "trivial"}
+_VALID_SEVERITIES = {
+    "blocker",
+    "critical",
+    "high",
+    "major",
+    "medium",
+    "minor",
+    "low",
+    "trivial",
+}
 
 _ACTION_VERBS = {
     "fix",

@@ -42,20 +42,14 @@ git clone https://github.com/BUNSEI1212/polydrive.git
 cd polydrive
 pip install -e .
 
-# またはPyPIからインストール（公開後）
-# pip install polydrive
-
 # ファイルのエンコーディングをチェック
 polydrive i18n check-encoding examples/bad_encoding/ --require-utf8
 
 # C/C++ソースコード内のハードコードされたCJK文字列を検出
 polydrive i18n detect-hardcoded examples/cpp_project/ --lang cpp
 
-# TBX用語集をインポート
+# 多言語用語集をインポート
 polydrive glossary import examples/automotive_terms.csv
-
-# 用語の一貫性をチェック（TBXフォーマットが必要）
-# polydrive glossary check terms.tbx --lang-pair en:zh
 
 # 疑似ローカライズされたリソースを生成
 polydrive i18n pseudo-localize examples/locales/en.json --mode expand+cjk
@@ -63,11 +57,23 @@ polydrive i18n pseudo-localize examples/locales/en.json --mode expand+cjk
 # 欠陥レポートを分析
 polydrive defect analyze --input examples/bug_report_zh.json
 
-# Qt翻訳ファイルを検証
-polydrive i18n validate-qt translations/app_zh_CN.ts
+# REST APIサーバーを起動
+polydrive serve --port 8080
+```
+
+詳しくは [examples/README.md](examples/README.md) をご覧ください。
+
+## その他のコマンド
+
+```bash
+# 用語の一貫性をチェック（TBXフォーマットが必要）
+polydrive glossary check terms.tbx --lang-pair en:zh
 
 # 用語適用による翻訳
 polydrive mt translate --text "Bremsfehler erkannt" --from de --to en --glossary terms.tbx
+
+# Qt翻訳ファイルを検証
+polydrive i18n validate-qt translations/app_zh_CN.ts
 
 # 言語間でのGherkinフィーチャー同期をチェック
 polydrive trace sync-gherkin --base en --compare zh,de --features tests/
@@ -80,9 +86,6 @@ polydrive trace aspice-evidence --project .
 
 # 品質メトリクスを表示
 polydrive metrics summary --input metrics.json
-
-# REST APIサーバーを起動
-polydrive serve --port 8080
 ```
 
 ## アーキテクチャ

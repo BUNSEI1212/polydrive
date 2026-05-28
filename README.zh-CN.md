@@ -42,20 +42,14 @@ git clone https://github.com/BUNSEI1212/polydrive.git
 cd polydrive
 pip install -e .
 
-# 或从 PyPI 安装（发布后可用）
-# pip install polydrive
-
 # 检查文件编码
 polydrive i18n check-encoding examples/bad_encoding/ --require-utf8
 
 # 检测 C/C++ 源码中的硬编码 CJK 字符
 polydrive i18n detect-hardcoded examples/cpp_project/ --lang cpp
 
-# 导入 TBX 术语表
+# 导入多语种术语表
 polydrive glossary import examples/automotive_terms.csv
-
-# 检查术语一致性（需要 TBX 格式）
-# polydrive glossary check terms.tbx --lang-pair en:zh
 
 # 生成伪本地化资源
 polydrive i18n pseudo-localize examples/locales/en.json --mode expand+cjk
@@ -63,11 +57,23 @@ polydrive i18n pseudo-localize examples/locales/en.json --mode expand+cjk
 # 分析缺陷报告质量
 polydrive defect analyze --input examples/bug_report_zh.json
 
-# 验证 Qt 翻译文件
-polydrive i18n validate-qt translations/app_zh_CN.ts
+# 启动 REST API 服务
+polydrive serve --port 8080
+```
+
+详见 [examples/README.md](examples/README.md) 获取完整 Demo 说明。
+
+## 更多命令
+
+```bash
+# 术语一致性检查（需要 TBX 格式）
+polydrive glossary check terms.tbx --lang-pair en:zh
 
 # 带术语约束的翻译（德语 -> 英语）
 polydrive mt translate --text "Bremsfehler erkannt" --from de --to en --glossary terms.tbx
+
+# 验证 Qt 翻译文件
+polydrive i18n validate-qt translations/app_zh_CN.ts
 
 # 检查 Gherkin 跨语言场景同步
 polydrive trace sync-gherkin --base en --compare zh,de --features tests/
@@ -80,9 +86,6 @@ polydrive trace aspice-evidence --project .
 
 # 查看质量度量摘要
 polydrive metrics summary --input metrics.json
-
-# 启动 REST API 服务
-polydrive serve --port 8080
 ```
 
 ## 架构
