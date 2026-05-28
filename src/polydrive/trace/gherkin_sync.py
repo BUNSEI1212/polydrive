@@ -10,7 +10,7 @@ from pathlib import Path
 @dataclass
 class GherkinScenario:
     name: str
-    steps: list[str]
+    steps: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
 
 
@@ -179,6 +179,35 @@ def _find_matching_files(
     return features
 
 
+def _build_scenario_map(
+    base_scenarios: list[GherkinScenario],
+    compare_scenarios: list[GherkinScenario],
+) -> dict[str, GherkinScenario]:
+    """Build a mapping from base scenario names to compare scenarios.
+
+    Strategy 1: exact name match (works when both files use the same names).
+    Strategy 2: position-based fallback — match the Nth scenario in base to
+    the Nth scenario in compare, which handles translated scenario names.
+    """
+    by_name: dict[str, GherkinScenario] = {s.name: s for s in compare_scenarios}
+    matched: dict[str, GherkinScenario] = {}
+
+    # Phase 1: exact name matches
+    for bs in base_scenarios:
+        if bs.name in by_name:
+            matched[bs.name] = by_name[bs.name]
+
+    # Phase 2: position-based fallback for unmatched base scenarios
+    used_compare_names = {cs.name for cs in matched.values()}
+    unmatched_base = [s for s in base_scenarios if s.name not in matched]
+    unmatched_compare = [s for s in compare_scenarios if s.name not in used_compare_names]
+
+    for bs, cs in zip(unmatched_base, unmatched_compare):
+        matched[bs.name] = cs
+
+    return matched
+
+
 def sync_features(
     base_dir: Path,
     base_lang: str,
@@ -213,11 +242,17 @@ def sync_features(
                 continue
 
             compare_feature = parse_feature(compare_path)
-            compare_scenarios = {s.name: s for s in compare_feature.scenarios}
+            compare_by_name = {s.name: s for s in compare_feature.scenarios}
 
-            # Missing scenarios in compare
+            # Build cross-language scenario map (exact name + position fallback)
+            scenario_map = _build_scenario_map(
+                base_feature.scenarios, compare_feature.scenarios,
+            )
+            matched_compare_names = {cs.name for cs in scenario_map.values()}
+
+            # Missing scenarios in compare (no match at all)
             for sname in base_scenarios:
-                if sname not in compare_scenarios:
+                if sname not in scenario_map:
                     issues.append(
                         SyncIssue(
                             severity="error",
@@ -229,9 +264,9 @@ def sync_features(
                         )
                     )
 
-            # Extra scenarios in compare (not in base)
-            for sname in compare_scenarios:
-                if sname not in base_scenarios:
+            # Extra scenarios in compare (not matched to any base scenario)
+            for sname in compare_by_name:
+                if sname not in matched_compare_names:
                     issues.append(
                         SyncIssue(
                             severity="warning",
@@ -239,15 +274,21 @@ def sync_features(
                             base_scenario=sname,
                             compare_scenario=sname,
                             compare_lang=compare_lang,
-                            details=f"Scenario '{sname}' exists in {compare_lang} but not in base",
+                            details=f"Scenario '{sname}' exists in {compare_lang} but not matched in base",
                         )
                     )
 
-            # Step count and tag mismatch for matching scenarios
+            # Step count and tag mismatch for matched scenarios
             for sname, base_sc in base_scenarios.items():
-                comp_sc = compare_scenarios.get(sname)
+                comp_sc = scenario_map.get(sname)
                 if comp_sc is None:
                     continue
+
+                label = (
+                    sname
+                    if comp_sc.name == sname
+                    else f"{sname} <-> {comp_sc.name}"
+                )
 
                 if len(base_sc.steps) != len(comp_sc.steps):
                     issues.append(
@@ -255,10 +296,11 @@ def sync_features(
                             severity="warning",
                             issue_type="step_count_mismatch",
                             base_scenario=sname,
-                            compare_scenario=sname,
+                            compare_scenario=comp_sc.name,
                             compare_lang=compare_lang,
                             details=(
-                                f"Step count mismatch: base has {len(base_sc.steps)}, "
+                                f"Step count mismatch for '{label}': "
+                                f"base has {len(base_sc.steps)}, "
                                 f"{compare_lang} has {len(comp_sc.steps)}"
                             ),
                         )
@@ -279,9 +321,9 @@ def sync_features(
                             severity="info",
                             issue_type="different_tag",
                             base_scenario=sname,
-                            compare_scenario=sname,
+                            compare_scenario=comp_sc.name,
                             compare_lang=compare_lang,
-                            details=f"Tag difference: {'; '.join(parts)}",
+                            details=f"Tag difference for '{label}': {'; '.join(parts)}",
                         )
                     )
 

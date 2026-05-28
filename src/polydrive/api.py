@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -43,7 +44,7 @@ async def glossary_import(
 
     fmt = format or ("tbx" if suffix in (".tbx", ".xml") else "csv")
 
-    tmp = Path(f"/tmp/polydrive_upload{suffix}")
+    tmp = Path(tempfile.mktemp(suffix=suffix, prefix="polydrive_upload_"))
     tmp.write_bytes(content)
 
     try:
@@ -72,7 +73,7 @@ async def glossary_check(
 ) -> dict[str, Any]:
     """Check terminology consistency in a glossary."""
     content = await file.read()
-    tmp = Path("/tmp/polydrive_check.tbx")
+    tmp = Path(tempfile.mktemp(suffix=".tbx", prefix="polydrive_check_"))
     tmp.write_bytes(content)
 
     try:
@@ -141,7 +142,7 @@ async def i18n_pseudo_localize(
     """Generate pseudo-localized resources."""
     content = await file.read()
     suffix = Path(file.filename or "").suffix.lower()
-    tmp = Path(f"/tmp/polydrive_pseudo{suffix}")
+    tmp = Path(tempfile.mktemp(suffix=suffix, prefix="polydrive_pseudo_"))
     tmp.write_bytes(content)
 
     try:

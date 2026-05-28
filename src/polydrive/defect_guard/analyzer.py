@@ -215,7 +215,7 @@ class DefectAnalyzer:
         non_dominant = total - script_counts[dominant_script]
         ratio = non_dominant / total
 
-        if ratio > 0.20:
+        if ratio > 0.05:
             return (
                 f"Language mixing detected: {ratio:.0%} non-dominant script "
                 f"(dominant: {dominant_script})"
