@@ -3,16 +3,22 @@
 from __future__ import annotations
 
 import tempfile
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from polydrive import __version__
-from polydrive.core.models import LangPair
+from polydrive.core.models import DefectReport, LangPair
+from polydrive.defect_guard import DefectAnalyzer
+from polydrive.defect_guard.template import load_template, validate_report
 from polydrive.glossary import import_csv, parse_tbx, write_tbx
 from polydrive.i18n_guard import check_encoding, detect_hardcoded, pseudo_localize
+from polydrive.metrics.collector import load_collector_from_json
+from polydrive.mt_gateway import MTGateway
+from polydrive.trace import check_unece_r121, collect_aspice_evidence, sync_features
 
 app = FastAPI(
     title="PolyDrive API",
@@ -151,3 +157,167 @@ async def i18n_pseudo_localize(
         tmp.unlink(missing_ok=True)
 
     return {"mode": mode, "keys_processed": len(result) if isinstance(result, dict) else 0}
+
+
+# ── Defect-guard endpoints ──────────────────────────────────────────
+
+
+@app.post("/defect/analyze")
+async def defect_analyze(report: DefectReport) -> dict[str, Any]:
+    """Analyze defect/bug report quality."""
+    analyzer = DefectAnalyzer()
+    result = analyzer.analyze(report)
+    return result.model_dump(mode="json")
+
+
+@app.post("/defect/validate-template")
+async def defect_validate_template(
+    template_path: str,
+    report: DefectReport,
+) -> dict[str, Any]:
+    """Validate a defect report against a YAML template."""
+    tpl = Path(template_path)
+    if not tpl.exists():
+        raise HTTPException(404, f"Template not found: {template_path}")
+
+    try:
+        template = load_template(tpl)
+    except Exception as exc:
+        raise HTTPException(400, f"Invalid template: {exc}") from exc
+
+    violations = validate_report(report, template)
+    return {
+        "template_name": template.name,
+        "violations_found": len(violations),
+        "violations": violations,
+    }
+
+
+# ── MT-gateway endpoints ────────────────────────────────────────────
+
+_gateway = MTGateway()
+
+
+@app.post("/mt/translate")
+async def mt_translate(
+    text: str,
+    source_lang: str,
+    target_lang: str,
+    engine: str | None = None,
+    glossary_path: str | None = None,
+) -> dict[str, Any]:
+    """Translate text through the MT gateway."""
+    glossary = None
+    if glossary_path:
+        gp = Path(glossary_path)
+        if not gp.exists():
+            raise HTTPException(404, f"Glossary not found: {glossary_path}")
+        try:
+            glossary = parse_tbx(gp)
+        except Exception as exc:
+            raise HTTPException(400, f"Invalid glossary: {exc}") from exc
+
+    try:
+        result = _gateway.translate(
+            text, source_lang, target_lang,
+            engine=engine, glossary=glossary,
+        )
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+    return result.model_dump(mode="json")
+
+
+@app.get("/mt/usage")
+async def mt_usage() -> dict[str, Any]:
+    """Return MT gateway usage statistics."""
+    stats = _gateway.usage_stats()
+    return stats.model_dump(mode="json")
+
+
+# ── Trace endpoints ─────────────────────────────────────────────────
+
+
+@app.post("/trace/sync-gherkin")
+async def trace_sync_gherkin(
+    features_path: str,
+    base_lang: str,
+    compare_langs: list[str],
+) -> dict[str, Any]:
+    """Compare Gherkin feature files across languages."""
+    target = Path(features_path)
+    if not target.exists():
+        raise HTTPException(404, f"Path not found: {features_path}")
+
+    issues = sync_features(target, base_lang, compare_langs)
+    return {
+        "features_path": features_path,
+        "base_lang": base_lang,
+        "issues_found": len(issues),
+        "issues": [asdict(i) for i in issues],
+    }
+
+
+@app.post("/trace/unece-check")
+async def trace_unece_check(hmi_manifest: dict[str, Any]) -> dict[str, Any]:
+    """Check HMI manifest against UNECE R121 requirements."""
+    issues = check_unece_r121(hmi_manifest)
+    return {
+        "issues_found": len(issues),
+        "issues": [asdict(i) for i in issues],
+    }
+
+
+@app.post("/trace/aspice-evidence")
+async def trace_aspice_evidence(project_path: str) -> dict[str, Any]:
+    """Scan project directory for ASPICE language-related evidence."""
+    target = Path(project_path)
+    if not target.exists():
+        raise HTTPException(404, f"Path not found: {project_path}")
+
+    evidence = collect_aspice_evidence(target)
+    items = []
+    for e in evidence:
+        item = asdict(e)
+        item["file_path"] = str(item["file_path"]) if item["file_path"] else None
+        items.append(item)
+    return {
+        "project_path": project_path,
+        "evidence_found": len(evidence),
+        "evidence": items,
+    }
+
+
+# ── Metrics endpoints ───────────────────────────────────────────────
+
+
+@app.post("/metrics/summary")
+async def metrics_summary(metrics_json_path: str) -> dict[str, Any]:
+    """Compute a metrics summary from an exported JSON file."""
+    target = Path(metrics_json_path)
+    if not target.exists():
+        raise HTTPException(404, f"Metrics file not found: {metrics_json_path}")
+
+    try:
+        collector = load_collector_from_json(target)
+    except Exception as exc:
+        raise HTTPException(400, f"Invalid metrics file: {exc}") from exc
+
+    summary = collector.compute_summary()
+    return summary.model_dump(mode="json")
+
+
+@app.get("/metrics/prometheus")
+async def metrics_prometheus(input: str = Query(..., description="Path to metrics JSON file")) -> PlainTextResponse:
+    """Export metrics as Prometheus text exposition format."""
+    target = Path(input)
+    if not target.exists():
+        raise HTTPException(404, f"Metrics file not found: {input}")
+
+    try:
+        collector = load_collector_from_json(target)
+    except Exception as exc:
+        raise HTTPException(400, f"Invalid metrics file: {exc}") from exc
+
+    text = collector.export_prometheus()
+    return PlainTextResponse(content=text, media_type="text/plain")

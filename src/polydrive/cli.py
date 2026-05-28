@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import Any, Callable
 
 import typer
 from rich.console import Console
@@ -17,6 +18,7 @@ if sys.platform == "win32":
 rprint = Console().print
 
 from polydrive import __version__
+from polydrive.core.config import PolyDriveConfig, load_config, save_config
 from polydrive.core.models import LangPair
 from polydrive.defect_guard import DefectAnalyzer
 from polydrive.defect_guard.template import load_template, validate_report
@@ -30,6 +32,9 @@ from polydrive.mt_gateway.engines.libretranslate import LibreTranslateEngine
 from polydrive.trace.aspice import collect_aspice_evidence
 from polydrive.trace.gherkin_sync import parse_feature, sync_features
 from polydrive.trace.unece import check_unece_r121
+
+# Module-level output format, set by the main callback.
+_output_format = "text"
 
 app = typer.Typer(
     name="polydrive",
@@ -80,11 +85,29 @@ trace_app = typer.Typer(
 )
 app.add_typer(trace_app, name="trace")
 
+config_app = typer.Typer(
+    name="config",
+    help="Configuration management: show or initialize PolyDrive settings.",
+    no_args_is_help=True,
+)
+app.add_typer(config_app, name="config")
+
 
 def version_callback(value: bool) -> None:
     if value:
         rprint(f"polydrive {__version__}")
         raise typer.Exit()
+
+
+def _output(data: Any, table_func: Callable[[], None] | None = None) -> None:
+    """Output data in the configured format (text / json / quiet)."""
+    if _output_format == "json":
+        rprint(json.dumps(data, indent=2, ensure_ascii=False))
+    elif _output_format == "quiet":
+        pass
+    else:
+        if table_func:
+            table_func()
 
 
 @app.callback()
@@ -97,8 +120,16 @@ def main(
         callback=version_callback,
         is_eager=True,
     ),
+    output: str = typer.Option(
+        "text",
+        "--output",
+        "-O",
+        help="Output format: text, json, quiet",
+    ),
 ) -> None:
     """PolyDrive - Language governance toolkit for multinational automotive testing."""
+    global _output_format
+    _output_format = output
 
 
 # ── Glossary commands ──────────────────────────────────────────────
@@ -135,30 +166,49 @@ def glossary_import(
         rprint(f"[red]Error:[/red] Unsupported format: {fmt}")
         raise typer.Exit(1)
 
-    rprint(
-        f"[green]Imported[/green] {len(glossary.entries)} entries "
-        f"from {src_path.name} (domain: {glossary.domain})"
-    )
-
-    table = Table(title="Glossary Summary")
-    table.add_column("ID", style="cyan")
-    table.add_column("Source Term", style="green")
-    table.add_column("Target Term", style="yellow")
-    table.add_column("Category")
-
-    for entry in glossary.entries[:20]:
-        src = entry.get_term(glossary.source_lang)
-        tgt = entry.get_term("zh") or entry.get_term("zh-Hans") or entry.get_term("de")
-        table.add_row(
-            entry.id,
-            src.term if src else "-",
-            tgt.term if tgt else "[dim]missing[/dim]",
-            entry.category.value,
+    def _print_table() -> None:
+        rprint(
+            f"[green]Imported[/green] {len(glossary.entries)} entries "
+            f"from {src_path.name} (domain: {glossary.domain})"
         )
+        table = Table(title="Glossary Summary")
+        table.add_column("ID", style="cyan")
+        table.add_column("Source Term", style="green")
+        table.add_column("Target Term", style="yellow")
+        table.add_column("Category")
 
-    rprint(table)
-    if len(glossary.entries) > 20:
-        rprint(f"[dim]... and {len(glossary.entries) - 20} more entries[/dim]")
+        for entry in glossary.entries[:20]:
+            src = entry.get_term(glossary.source_lang)
+            tgt = entry.get_term("zh") or entry.get_term("zh-Hans") or entry.get_term("de")
+            table.add_row(
+                entry.id,
+                src.term if src else "-",
+                tgt.term if tgt else "[dim]missing[/dim]",
+                entry.category.value,
+            )
+        rprint(table)
+        if len(glossary.entries) > 20:
+            rprint(f"[dim]... and {len(glossary.entries) - 20} more entries[/dim]")
+
+    json_data = {
+        "file": src_path.name,
+        "domain": glossary.domain,
+        "entry_count": len(glossary.entries),
+        "entries": [
+            {
+                "id": e.id,
+                "source_term": (e.get_term(glossary.source_lang).term if e.get_term(glossary.source_lang) else None),
+                "target_term": (
+                    (e.get_term("zh") or e.get_term("zh-Hans") or e.get_term("de")).term
+                    if (e.get_term("zh") or e.get_term("zh-Hans") or e.get_term("de"))
+                    else None
+                ),
+                "category": e.category.value,
+            }
+            for e in glossary.entries
+        ],
+    }
+    _output(json_data, _print_table)
 
 
 @glossary_app.command("check")
@@ -320,10 +370,7 @@ def i18n_check_encoding(
     target = Path(path)
     issues = check_encoding(target, require_utf8=require_utf8, fail_on_bom=fail_on_bom)
 
-    if output_format == "json":
-        data = [issue.model_dump(mode="json") for issue in issues]
-        rprint(json.dumps(data, indent=2, ensure_ascii=False))
-    else:
+    def _print_table() -> None:
         if not issues:
             rprint(f"[green]No encoding issues found[/green] in {path}")
             return
@@ -344,6 +391,9 @@ def i18n_check_encoding(
                 issue.details,
             )
         rprint(table)
+
+    json_data = [issue.model_dump(mode="json") for issue in issues]
+    _output(json_data, _print_table)
 
     has_errors = any(i.issue_type in ("non_utf8", "has_bom") for i in issues)
     if has_errors:
@@ -475,7 +525,8 @@ def defect_analyze(
 
     analyzer = DefectAnalyzer()
     result = analyzer.analyze(report, glossary=gl)
-    rprint(json.dumps(result.model_dump(mode="json"), indent=2, ensure_ascii=False))
+    result_data = result.model_dump(mode="json")
+    _output(result_data)
 
 
 @defect_app.command("batch")
@@ -550,45 +601,49 @@ def metrics_summary(
     collector = load_collector_from_json(in_path)
     summary = collector.compute_summary()
 
-    rprint(f"[bold]PolyDrive Metrics Summary[/bold]")
-    rprint(f"  Period: {summary.period_start or 'N/A'} - {summary.period_end or 'N/A'}")
-    rprint(f"  Total events: {summary.total_events}")
+    def _print_tables() -> None:
+        rprint(f"[bold]PolyDrive Metrics Summary[/bold]")
+        rprint(f"  Period: {summary.period_start or 'N/A'} - {summary.period_end or 'N/A'}")
+        rprint(f"  Total events: {summary.total_events}")
 
-    table = Table(title="Encoding")
-    table.add_column("Metric", style="cyan")
-    table.add_column("Value", justify="right")
-    table.add_row("Checks run", str(summary.encoding_checks_run))
-    table.add_row("Issues found", str(summary.encoding_issues_found))
-    table.add_row("Issue rate", f"{summary.encoding_issue_rate:.4f}")
-    rprint(table)
+        table = Table(title="Encoding")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", justify="right")
+        table.add_row("Checks run", str(summary.encoding_checks_run))
+        table.add_row("Issues found", str(summary.encoding_issues_found))
+        table.add_row("Issue rate", f"{summary.encoding_issue_rate:.4f}")
+        rprint(table)
 
-    table = Table(title="Glossary")
-    table.add_column("Metric", style="cyan")
-    table.add_column("Value", justify="right")
-    table.add_row("Checks run", str(summary.glossary_checks_run))
-    table.add_row("Consistency issues", str(summary.glossary_consistency_issues))
-    table.add_row("Term coverage", f"{summary.glossary_term_coverage:.1f}%")
-    rprint(table)
+        table = Table(title="Glossary")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", justify="right")
+        table.add_row("Checks run", str(summary.glossary_checks_run))
+        table.add_row("Consistency issues", str(summary.glossary_consistency_issues))
+        table.add_row("Term coverage", f"{summary.glossary_term_coverage:.1f}%")
+        rprint(table)
 
-    table = Table(title="Defect Quality")
-    table.add_column("Metric", style="cyan")
-    table.add_column("Value", justify="right")
-    table.add_row("Defects analyzed", str(summary.defects_analyzed))
-    table.add_row("Avg quality score", f"{summary.avg_defect_quality_score:.1f}")
-    table.add_row("Low quality (<50)", str(summary.low_quality_defects))
-    rprint(table)
+        table = Table(title="Defect Quality")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", justify="right")
+        table.add_row("Defects analyzed", str(summary.defects_analyzed))
+        table.add_row("Avg quality score", f"{summary.avg_defect_quality_score:.1f}")
+        table.add_row("Low quality (<50)", str(summary.low_quality_defects))
+        rprint(table)
 
-    table = Table(title="Translations")
-    table.add_column("Metric", style="cyan")
-    table.add_column("Value", justify="right")
-    table.add_row("Translations", str(summary.translations_made))
-    table.add_row("Characters translated", str(summary.total_characters_translated))
-    table.add_row("Avg latency (ms)", f"{summary.avg_translation_latency_ms:.1f}")
-    table.add_row("Glossary hit rate", f"{summary.glossary_hit_rate:.1f}%")
-    rprint(table)
+        table = Table(title="Translations")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", justify="right")
+        table.add_row("Translations", str(summary.translations_made))
+        table.add_row("Characters translated", str(summary.total_characters_translated))
+        table.add_row("Avg latency (ms)", f"{summary.avg_translation_latency_ms:.1f}")
+        table.add_row("Glossary hit rate", f"{summary.glossary_hit_rate:.1f}%")
+        rprint(table)
 
-    rprint(f"\n[bold green]i18n Health Score:[/bold green] {summary.i18n_health_score:.1f}")
-    rprint(f"[bold green]Terminology Maturity:[/bold green] {summary.terminology_maturity:.1f}")
+        rprint(f"\n[bold green]i18n Health Score:[/bold green] {summary.i18n_health_score:.1f}")
+        rprint(f"[bold green]Terminology Maturity:[/bold green] {summary.terminology_maturity:.1f}")
+
+    json_data = summary.model_dump(mode="json")
+    _output(json_data, _print_tables)
 
 
 @metrics_app.command("prometheus")
@@ -834,18 +889,25 @@ def trace_sync_gherkin(
     compare_langs = [lang.strip() for lang in compare.split(",")]
     issues = sync_features(features_dir, base_lang=base, compare_langs=compare_langs)
 
-    if not issues:
-        rprint(f"[green]No sync issues found[/green] across {base}/{compare}")
-        return
+    def _print_table() -> None:
+        if not issues:
+            rprint(f"[green]No sync issues found[/green] across {base}/{compare}")
+            return
 
-    rprint(f"[yellow]Found {len(issues)} sync issue(s)[/yellow]:\n")
-    for issue in issues:
-        color = {"error": "red", "warning": "yellow", "info": "blue"}.get(issue.severity, "white")
-        rprint(
-            f"  [{color}]{issue.severity.upper()}[/{color}] "
-            f"[{color}]{issue.issue_type}[/{color}]: "
-            f"{issue.details}"
-        )
+        rprint(f"[yellow]Found {len(issues)} sync issue(s)[/yellow]:\n")
+        for issue in issues:
+            color = {"error": "red", "warning": "yellow", "info": "blue"}.get(issue.severity, "white")
+            rprint(
+                f"  [{color}]{issue.severity.upper()}[/{color}] "
+                f"[{color}]{issue.issue_type}[/{color}]: "
+                f"{issue.details}"
+            )
+
+    json_data = [
+        {"severity": i.severity, "issue_type": i.issue_type, "details": i.details}
+        for i in issues
+    ]
+    _output(json_data, _print_table)
 
     error_count = sum(1 for i in issues if i.severity == "error")
     if error_count > 0:
@@ -868,21 +930,28 @@ def trace_unece_check(
 
     issues = check_unece_r121(hmi_manifest)
 
-    if not issues:
-        rprint(f"[green]No compliance issues found[/green] for {regulation}")
-        return
+    def _print_table() -> None:
+        if not issues:
+            rprint(f"[green]No compliance issues found[/green] for {regulation}")
+            return
 
-    rprint(f"[yellow]Found {len(issues)} compliance issue(s)[/yellow] for {regulation}:\n")
+        rprint(f"[yellow]Found {len(issues)} compliance issue(s)[/yellow] for {regulation}:\n")
 
-    table = Table(title=f"UNECE {regulation} Compliance Issues")
-    table.add_column("Severity", style="red")
-    table.add_column("Check", style="cyan")
-    table.add_column("Item", style="yellow")
-    table.add_column("Details")
+        table = Table(title=f"UNECE {regulation} Compliance Issues")
+        table.add_column("Severity", style="red")
+        table.add_column("Check", style="cyan")
+        table.add_column("Item", style="yellow")
+        table.add_column("Details")
 
-    for issue in issues:
-        table.add_row(issue.severity.upper(), issue.check_type, issue.item_id or "-", issue.details)
-    rprint(table)
+        for issue in issues:
+            table.add_row(issue.severity.upper(), issue.check_type, issue.item_id or "-", issue.details)
+        rprint(table)
+
+    json_data = [
+        {"severity": i.severity, "check_type": i.check_type, "item_id": i.item_id, "details": i.details}
+        for i in issues
+    ]
+    _output(json_data, _print_table)
 
     error_count = sum(1 for i in issues if i.severity == "error")
     if error_count > 0:
@@ -935,6 +1004,48 @@ def trace_aspice_evidence(
                 e.description,
             )
         rprint(table)
+
+
+# ── Config commands ─────────────────────────────────────────────────
+
+
+@config_app.command("show")
+def config_show() -> None:
+    """Display current PolyDrive configuration as a Rich table."""
+    cfg = load_config()
+
+    table = Table(title="PolyDrive Configuration")
+    table.add_column("Setting", style="cyan")
+    table.add_column("Value", style="green")
+
+    table.add_row("default_source_lang", cfg.default_source_lang)
+    table.add_row("default_target_langs", ", ".join(cfg.default_target_langs))
+    table.add_row("glossary_path", cfg.glossary_path or "(none)")
+    table.add_row("mt_engine", cfg.mt_engine)
+    table.add_row("mt_engines_config", json.dumps(cfg.mt_engines_config) if cfg.mt_engines_config else "(empty)")
+    table.add_row("encoding_require_utf8", str(cfg.encoding_require_utf8))
+    table.add_row("encoding_fail_on_bom", str(cfg.encoding_fail_on_bom))
+    table.add_row("encoding_exclude", ", ".join(cfg.encoding_exclude) if cfg.encoding_exclude else "(none)")
+    table.add_row("defect_min_score", str(cfg.defect_min_score))
+    table.add_row("terminology_min_frequency", str(cfg.terminology_min_frequency))
+    table.add_row("trace_similarity_threshold", str(cfg.trace_similarity_threshold))
+    table.add_row("output_format", cfg.output_format)
+
+    rprint(table)
+
+
+@config_app.command("init")
+def config_init() -> None:
+    """Create a default .polydrive.yaml in the current directory."""
+    dest = Path.cwd() / ".polydrive.yaml"
+    if dest.exists():
+        rprint(f"[yellow]Config file already exists:[/yellow] {dest}")
+        rprint("Remove it first or edit manually to update.")
+        raise typer.Exit(1)
+
+    cfg = PolyDriveConfig()
+    save_config(cfg, dest)
+    rprint(f"[green]Created[/green] default config at {dest}")
 
 
 # ── Serve command ──────────────────────────────────────────────────

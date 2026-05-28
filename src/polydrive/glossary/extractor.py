@@ -6,6 +6,26 @@ import re
 from collections import Counter
 from dataclasses import dataclass
 
+# Stopwords to filter from extracted terms — these are not valid term components.
+_STOPWORDS = frozenset({
+    "the", "a", "an", "is", "are", "was", "were", "has", "have", "had",
+    "does", "do", "can", "will", "shall", "should", "would", "could",
+    "may", "might", "must", "and", "or", "but", "not", "no", "of", "in",
+    "on", "at", "to", "for", "with", "from", "by", "as", "into",
+    "through", "after", "before", "above", "below", "between", "out",
+    "off", "over", "under", "again", "then", "once", "here", "there",
+    "when", "where", "why", "how", "all", "each", "few", "more", "most",
+    "other", "some", "such", "than", "too", "very",
+})
+
+# Function-word fragments that indicate KeyBERT artifacts rather than real terms.
+_FRAGMENT_PREFIXES = frozenset({
+    "uses", "detects", "prevents", "builds", "based", "upon",
+})
+_FRAGMENT_SUFFIXES = frozenset({
+    "uses", "detects", "prevents", "builds", "based", "upon",
+})
+
 _KEYBERT_AVAILABLE: bool | None = None
 
 
@@ -40,7 +60,8 @@ def extract_terms(
     """Extract candidate terminology from a list of texts.
 
     Uses KeyBERT for semantic extraction when available, falls back to
-    frequency-based noun chunk extraction.
+    frequency-based noun chunk extraction.  Results are post-processed to
+    remove stopword noise, fragments, and redundant sub-terms.
     """
     all_text = "\n".join(texts)
     if not all_text.strip():
@@ -53,6 +74,8 @@ def extract_terms(
     else:
         results = _frequency_extract(all_text, min_frequency, max_terms)
 
+    results = _postprocess(results, all_text)
+
     # Deduplicate and sort by score
     seen: dict[str, CandidateTerm] = {}
     for ct in results:
@@ -61,6 +84,79 @@ def extract_terms(
             seen[key] = ct
 
     return sorted(seen.values(), key=lambda x: (-x.score, -x.frequency))[:max_terms]
+
+
+def _postprocess(
+    candidates: list[CandidateTerm],
+    source_text: str,
+) -> list[CandidateTerm]:
+    """Apply noise-reduction filters to raw extracted terms.
+
+    Filters applied in order:
+    1. Stopword filtering — drop terms containing stopwords in any word position.
+    2. Length filter — drop terms shorter than 3 or longer than 50 characters.
+    3. Fragment detection — drop terms starting/ending with function-word verbs.
+    4. Duplicate containment — if a shorter term is a substring of a longer
+       term with a higher score, remove the shorter one.
+    5. Frequency bonus — boost scores for terms that appear more often.
+    """
+    # --- 1. Stopword filter ---
+    filtered: list[CandidateTerm] = []
+    for ct in candidates:
+        words = ct.term.lower().split()
+        if any(w in _STOPWORDS for w in words):
+            continue
+        filtered.append(ct)
+    candidates = filtered
+
+    # --- 2. Length filter ---
+    candidates = [ct for ct in candidates if 3 <= len(ct.term) <= 50]
+
+    # --- 3. Fragment detection ---
+    cleaned: list[CandidateTerm] = []
+    for ct in candidates:
+        words = ct.term.lower().split()
+        if any(w in _FRAGMENT_PREFIXES for w in words):
+            continue
+        cleaned.append(ct)
+    candidates = cleaned
+
+    # --- 4. Duplicate containment ---
+    # Sort by score descending so higher-scored terms are kept.
+    candidates_sorted = sorted(candidates, key=lambda c: -c.score)
+    kept: list[CandidateTerm] = []
+    for ct in candidates_sorted:
+        term_lower = ct.term.lower()
+        dominated = False
+        for better in kept:
+            better_lower = better.term.lower()
+            if term_lower in better_lower and term_lower != better_lower:
+                dominated = True
+                break
+        if not dominated:
+            kept.append(ct)
+    candidates = kept
+
+    # --- 5. Frequency bonus ---
+    text_lower = source_text.lower()
+    freqs: dict[str, int] = {}
+    for ct in candidates:
+        freqs[ct.term.lower()] = text_lower.count(ct.term.lower())
+    max_freq = max(freqs.values()) if freqs else 1
+
+    adjusted: list[CandidateTerm] = []
+    for ct in candidates:
+        freq = freqs[ct.term.lower()]
+        new_score = ct.score * 0.7 + (freq / max_freq) * 0.3
+        adjusted.append(
+            CandidateTerm(
+                term=ct.term,
+                score=round(new_score, 4),
+                frequency=freq,
+                source=ct.source,
+            )
+        )
+    return adjusted
 
 
 def _keybert_extract(text: str, max_terms: int) -> list[CandidateTerm]:
