@@ -33,7 +33,7 @@ htmlcov/
 Thumbs.db
 
 # uv
-uv.lock
+# uv.lock is committed for reproducible CI builds
 
 # Build
 *.whl
