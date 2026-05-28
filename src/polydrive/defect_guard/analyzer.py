@@ -8,23 +8,67 @@ from collections import Counter
 
 from langdetect import detect as detect_language
 
-from polydrive.core.models import DefectQualityResult, DefectReport, Glossary
+from polydrive.core.models import DefectQualityResult
+from polydrive.core.models import DefectReport
+from polydrive.core.models import Glossary
 
 _VALID_SEVERITIES = {"critical", "major", "minor", "trivial"}
 
 _ACTION_VERBS = {
-    "fix", "add", "remove", "update", "change", "create", "delete",
-    "rename", "move", "refactor", "replace", "correct", "adjust",
-    "enable", "disable", "implement", "resolve", "prevent", "handle",
-    "support", "improve", "migrate", "upgrade", "downgrade", "restore",
-    "crash", "fail", "break", "hang", "freeze", "leak", "block",
-    "overflow", "underflow", "regress", "skip", "ignore", "missing",
-    "wrong", "incorrect", "unexpected", "invalid", "corrupt",
+    "fix",
+    "add",
+    "remove",
+    "update",
+    "change",
+    "create",
+    "delete",
+    "rename",
+    "move",
+    "refactor",
+    "replace",
+    "correct",
+    "adjust",
+    "enable",
+    "disable",
+    "implement",
+    "resolve",
+    "prevent",
+    "handle",
+    "support",
+    "improve",
+    "migrate",
+    "upgrade",
+    "downgrade",
+    "restore",
+    "crash",
+    "fail",
+    "break",
+    "hang",
+    "freeze",
+    "leak",
+    "block",
+    "overflow",
+    "underflow",
+    "regress",
+    "skip",
+    "ignore",
+    "missing",
+    "wrong",
+    "incorrect",
+    "unexpected",
+    "invalid",
+    "corrupt",
 }
 
 _VAGUE_PHRASES = {
-    "doesn't work", "does not work", "not working", "broken", "it fails",
-    "it crashes", "something wrong", "doesn't work properly",
+    "doesn't work",
+    "does not work",
+    "not working",
+    "broken",
+    "it fails",
+    "it crashes",
+    "something wrong",
+    "doesn't work properly",
 }
 
 _SPECIFIC_PATTERN = re.compile(
@@ -37,7 +81,9 @@ _NUMBERED_STEP = re.compile(r"^\s*(\d+[\.\):]|\[[\d]+\]|step\s*\d+)", re.IGNOREC
 class DefectAnalyzer:
     """Analyzes defect/bug report quality across multiple dimensions."""
 
-    def analyze(self, report: DefectReport, glossary: Glossary | None = None) -> DefectQualityResult:
+    def analyze(
+        self, report: DefectReport, glossary: Glossary | None = None
+    ) -> DefectQualityResult:
         field_score, missing = self._field_completeness(report)
         text_score = self._text_quality(report)
         repro_score = self._reproducibility(report)
@@ -89,11 +135,26 @@ class DefectAnalyzer:
             ("title", len(report.title.strip()) > 10),
             ("description", len(report.description.strip()) > 20),
             ("steps_to_reproduce", len(report.steps_to_reproduce) >= 1),
-            ("expected_behavior", report.expected_behavior is not None and len(report.expected_behavior.strip()) > 0),
-            ("actual_behavior", report.actual_behavior is not None and len(report.actual_behavior.strip()) > 0),
+            (
+                "expected_behavior",
+                report.expected_behavior is not None
+                and len(report.expected_behavior.strip()) > 0,
+            ),
+            (
+                "actual_behavior",
+                report.actual_behavior is not None
+                and len(report.actual_behavior.strip()) > 0,
+            ),
             ("environment", len(report.environment) >= 1),
-            ("severity", report.severity is not None and report.severity.lower() in _VALID_SEVERITIES),
-            ("component", report.component is not None and len(report.component.strip()) > 0),
+            (
+                "severity",
+                report.severity is not None
+                and report.severity.lower() in _VALID_SEVERITIES,
+            ),
+            (
+                "component",
+                report.component is not None and len(report.component.strip()) > 0,
+            ),
         ]
         passed = sum(1 for _, ok in checks if ok)
         missing = [name for name, ok in checks if not ok]
@@ -109,16 +170,24 @@ class DefectAnalyzer:
         points = 0.0
         max_points = 4.0
 
-        first_word = report.title.strip().split()[0].lower().rstrip(":") if report.title.strip() else ""
+        first_word = (
+            report.title.strip().split()[0].lower().rstrip(":")
+            if report.title.strip()
+            else ""
+        )
         if first_word in _ACTION_VERBS or len(report.title.strip()) > 20:
             points += 1.0
 
         if report.steps_to_reproduce:
-            numbered = sum(1 for s in report.steps_to_reproduce if _NUMBERED_STEP.match(s))
+            numbered = sum(
+                1 for s in report.steps_to_reproduce if _NUMBERED_STEP.match(s)
+            )
             if numbered >= len(report.steps_to_reproduce) * 0.5:
                 points += 1.0
 
-        all_text = f"{report.title} {report.description} {' '.join(report.steps_to_reproduce)}"
+        all_text = (
+            f"{report.title} {report.description} {' '.join(report.steps_to_reproduce)}"
+        )
         if _SPECIFIC_PATTERN.search(all_text):
             points += 1.0
 
@@ -158,7 +227,9 @@ class DefectAnalyzer:
 
         return (points / max_points) * 100.0
 
-    def _terminology_compliance(self, report: DefectReport, glossary: Glossary | None) -> float:
+    def _terminology_compliance(
+        self, report: DefectReport, glossary: Glossary | None
+    ) -> float:
         if glossary is None:
             return 100.0
 
@@ -198,7 +269,9 @@ class DefectAnalyzer:
         except Exception:
             return None
 
-    def _check_language_mix(self, report: DefectReport, dominant_lang: str | None) -> str | None:
+    def _check_language_mix(
+        self, report: DefectReport, dominant_lang: str | None
+    ) -> str | None:
         text = f"{report.title} {report.description}"
         if not text.strip():
             return None
@@ -238,7 +311,9 @@ class DefectAnalyzer:
     def _suggestions(self, report: DefectReport, missing: list[str]) -> list[str]:
         suggestions: list[str] = []
         if "title" in missing:
-            suggestions.append("Title should be more descriptive (at least 10 characters)")
+            suggestions.append(
+                "Title should be more descriptive (at least 10 characters)"
+            )
         if "description" in missing:
             suggestions.append("Description needs more detail (at least 20 characters)")
         if "steps_to_reproduce" in missing:
@@ -250,16 +325,26 @@ class DefectAnalyzer:
         if "environment" in missing:
             suggestions.append("Add environment details (OS, version, platform, etc.)")
         if "severity" in missing:
-            suggestions.append("Set severity to one of: critical, major, minor, trivial")
+            suggestions.append(
+                "Set severity to one of: critical, major, minor, trivial"
+            )
         if "component" in missing:
             suggestions.append("Specify the affected component")
 
         if len(report.description.strip()) <= 50 and "description" not in missing:
-            suggestions.append("Description could be more detailed (>50 characters recommended)")
+            suggestions.append(
+                "Description could be more detailed (>50 characters recommended)"
+            )
 
         if report.steps_to_reproduce:
-            vague = [s for s in report.steps_to_reproduce if any(vp in s.lower() for vp in _VAGUE_PHRASES)]
+            vague = [
+                s
+                for s in report.steps_to_reproduce
+                if any(vp in s.lower() for vp in _VAGUE_PHRASES)
+            ]
             if vague:
-                suggestions.append("Some reproduction steps are too vague — add specific actions")
+                suggestions.append(
+                    "Some reproduction steps are too vague — add specific actions"
+                )
 
         return suggestions

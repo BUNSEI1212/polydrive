@@ -6,19 +6,15 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from polydrive.core.models import (
-    ConsistencyIssue,
-    DefectQualityResult,
-    EncodingIssue,
-    MTResult,
-)
-from polydrive.metrics.collector import (
-    MetricEvent,
-    MetricsCollector,
-    MetricsSummary,
-    compute_metrics,
-    load_collector_from_json,
-)
+from polydrive.core.models import ConsistencyIssue
+from polydrive.core.models import DefectQualityResult
+from polydrive.core.models import EncodingIssue
+from polydrive.core.models import MTResult
+from polydrive.metrics.collector import MetricEvent
+from polydrive.metrics.collector import MetricsCollector
+from polydrive.metrics.collector import MetricsSummary
+from polydrive.metrics.collector import compute_metrics
+from polydrive.metrics.collector import load_collector_from_json
 from polydrive.metrics.prometheus import format_prometheus
 
 
@@ -118,9 +114,7 @@ class TestMetricsCollector:
 
     def test_record_translation(self) -> None:
         collector = MetricsCollector()
-        collector.record_translation(
-            _mt_result(glossary_applied=True), "en", "de"
-        )
+        collector.record_translation(_mt_result(glossary_applied=True), "en", "de")
         collector.record_translation(
             _mt_result(
                 glossary_applied=False,
@@ -190,7 +184,11 @@ class TestComputeMetrics:
                 timestamp=datetime.now(),
                 event_type="encoding_check",
                 module="i18n_guard",
-                data={"issues_count": 3, "total_files": 10, "issue_types": ["non_utf8"]},
+                data={
+                    "issues_count": 3,
+                    "total_files": 10,
+                    "issue_types": ["non_utf8"],
+                },
             ),
         ]
         summary = compute_metrics(events)
@@ -219,7 +217,10 @@ class TestExportJson:
         loaded_summary = loaded.compute_summary()
         original_summary = collector.compute_summary()
         assert loaded_summary.total_events == original_summary.total_events
-        assert loaded_summary.encoding_issues_found == original_summary.encoding_issues_found
+        assert (
+            loaded_summary.encoding_issues_found
+            == original_summary.encoding_issues_found
+        )
 
 
 class TestPrometheusExport:

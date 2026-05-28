@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field
 from pathlib import Path
 
 
@@ -204,7 +205,9 @@ def _build_scenario_map(
     # Phase 2: semantic matching for unmatched scenarios
     used_compare_names = {cs.name for cs in matched.values()}
     unmatched_base = [s for s in base_scenarios if s.name not in matched]
-    unmatched_compare = [s for s in compare_scenarios if s.name not in used_compare_names]
+    unmatched_compare = [
+        s for s in compare_scenarios if s.name not in used_compare_names
+    ]
 
     if unmatched_base and unmatched_compare:
         from polydrive.trace.semantic import match_scenarios
@@ -257,7 +260,8 @@ def sync_features(
 
             # Build cross-language scenario map (exact name + position fallback)
             scenario_map = _build_scenario_map(
-                base_feature.scenarios, compare_feature.scenarios,
+                base_feature.scenarios,
+                compare_feature.scenarios,
             )
             matched_compare_names = {cs.name for cs in scenario_map.values()}
 
@@ -296,9 +300,7 @@ def sync_features(
                     continue
 
                 label = (
-                    sname
-                    if comp_sc.name == sname
-                    else f"{sname} <-> {comp_sc.name}"
+                    sname if comp_sc.name == sname else f"{sname} <-> {comp_sc.name}"
                 )
 
                 if len(base_sc.steps) != len(comp_sc.steps):

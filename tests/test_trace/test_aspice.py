@@ -13,7 +13,9 @@ class TestCollectAspiceEvidence:
     def test_finds_gherkin_feature_files(self) -> None:
         evidence = collect_aspice_evidence(FIXTURES_DIR)
         feature_evidence = [
-            e for e in evidence if "BDD feature" in e.description or e.process_id == "SWE.6"
+            e
+            for e in evidence
+            if "BDD feature" in e.description or e.process_id == "SWE.6"
         ]
         assert len(feature_evidence) > 0
 
@@ -31,7 +33,9 @@ class TestCollectAspiceEvidence:
 
     def test_terminology_files_detected(self) -> None:
         evidence = collect_aspice_evidence(FIXTURES_DIR)
-        term_evidence = [e for e in evidence if "Terminology management" in e.description]
+        term_evidence = [
+            e for e in evidence if "Terminology management" in e.description
+        ]
         assert len(term_evidence) > 0
 
     def test_missing_processes_reported(self) -> None:

@@ -7,18 +7,29 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi import FastAPI
+from fastapi import File
+from fastapi import HTTPException
+from fastapi import Query
+from fastapi import UploadFile
+from fastapi.responses import PlainTextResponse
 
 from polydrive import __version__
-from polydrive.core.models import DefectReport, LangPair
+from polydrive.core.models import DefectReport
+from polydrive.core.models import LangPair
 from polydrive.defect_guard import DefectAnalyzer
-from polydrive.defect_guard.template import load_template, validate_report
-from polydrive.glossary import import_csv, parse_tbx, write_tbx
-from polydrive.i18n_guard import check_encoding, detect_hardcoded, pseudo_localize
+from polydrive.defect_guard.template import load_template
+from polydrive.defect_guard.template import validate_report
+from polydrive.glossary import import_csv
+from polydrive.glossary import parse_tbx
+from polydrive.i18n_guard import check_encoding
+from polydrive.i18n_guard import detect_hardcoded
+from polydrive.i18n_guard import pseudo_localize
 from polydrive.metrics.collector import load_collector_from_json
 from polydrive.mt_gateway import MTGateway
-from polydrive.trace import check_unece_r121, collect_aspice_evidence, sync_features
+from polydrive.trace import check_unece_r121
+from polydrive.trace import collect_aspice_evidence
+from polydrive.trace import sync_features
 
 app = FastAPI(
     title="PolyDrive API",
@@ -40,7 +51,7 @@ async def health() -> dict[str, str]:
 
 @app.post("/glossary/import")
 async def glossary_import(
-    file: UploadFile = File(...),
+    file: UploadFile = File(...),  # noqa: B008
     domain: str = "automotive",
     format: str | None = None,
 ) -> dict[str, Any]:
@@ -74,7 +85,7 @@ async def glossary_import(
 
 @app.post("/glossary/check")
 async def glossary_check(
-    file: UploadFile = File(...),
+    file: UploadFile = File(...),  # noqa: B008
     lang_pair: str = "en:zh",
 ) -> dict[str, Any]:
     """Check terminology consistency in a glossary."""
@@ -142,7 +153,7 @@ async def i18n_detect_hardcoded(
 
 @app.post("/i18n/pseudo-localize")
 async def i18n_pseudo_localize(
-    file: UploadFile = File(...),
+    file: UploadFile = File(...),  # noqa: B008
     mode: str = "expand",
 ) -> dict[str, Any]:
     """Generate pseudo-localized resources."""
@@ -156,7 +167,10 @@ async def i18n_pseudo_localize(
     finally:
         tmp.unlink(missing_ok=True)
 
-    return {"mode": mode, "keys_processed": len(result) if isinstance(result, dict) else 0}
+    return {
+        "mode": mode,
+        "keys_processed": len(result) if isinstance(result, dict) else 0,
+    }
 
 
 # ── Defect-guard endpoints ──────────────────────────────────────────
@@ -219,8 +233,11 @@ async def mt_translate(
 
     try:
         result = _gateway.translate(
-            text, source_lang, target_lang,
-            engine=engine, glossary=glossary,
+            text,
+            source_lang,
+            target_lang,
+            engine=engine,
+            glossary=glossary,
         )
     except (ValueError, RuntimeError) as exc:
         raise HTTPException(400, str(exc)) from exc
@@ -308,7 +325,9 @@ async def metrics_summary(metrics_json_path: str) -> dict[str, Any]:
 
 
 @app.get("/metrics/prometheus")
-async def metrics_prometheus(input: str = Query(..., description="Path to metrics JSON file")) -> PlainTextResponse:
+async def metrics_prometheus(
+    input: str = Query(..., description="Path to metrics JSON file"),
+) -> PlainTextResponse:
     """Export metrics as Prometheus text exposition format."""
     target = Path(input)
     if not target.exists():

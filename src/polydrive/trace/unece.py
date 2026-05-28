@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 R121_TELL_TALES: dict[str, dict[str, str | bool | None]] = {
     "brake_warning": {"symbol": "ISO 7000-0239", "text": None, "required": True},

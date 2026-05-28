@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from polydrive.core.models import EncodingIssue
 from polydrive.i18n_guard.encoding import check_encoding
 
@@ -25,7 +23,8 @@ class TestCheckEncoding:
     def test_detects_bom(self) -> None:
         """Should detect a UTF-8 file with BOM."""
         issues = check_encoding(
-            FIXTURES / "utf8_bom_sample.txt", fail_on_bom=True,
+            FIXTURES / "utf8_bom_sample.txt",
+            fail_on_bom=True,
         )
         assert any(i.issue_type == "has_bom" for i in issues)
 
@@ -37,7 +36,8 @@ class TestCheckEncoding:
     def test_clean_utf8_require_utf8_ok(self) -> None:
         """Clean UTF-8 files should pass even with require_utf8=True."""
         issues = check_encoding(
-            FIXTURES / "utf8_clean_sample.txt", require_utf8=True,
+            FIXTURES / "utf8_clean_sample.txt",
+            require_utf8=True,
         )
         assert len(issues) == 0
 

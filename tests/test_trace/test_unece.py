@@ -81,7 +81,9 @@ class TestCheckUneceR121:
         }
         issues = check_unece_r121(manifest)
         missing_sym = [
-            i for i in issues if i.check_type == "missing_symbol" and i.item_id == "brake_warning"
+            i
+            for i in issues
+            if i.check_type == "missing_symbol" and i.item_id == "brake_warning"
         ]
         assert len(missing_sym) == 1
 

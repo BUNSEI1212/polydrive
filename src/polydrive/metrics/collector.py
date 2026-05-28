@@ -3,18 +3,16 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from polydrive.core.models import (
-    ConsistencyIssue,
-    DefectQualityResult,
-    EncodingIssue,
-    MTResult,
-)
+from polydrive.core.models import ConsistencyIssue
+from polydrive.core.models import DefectQualityResult
+from polydrive.core.models import EncodingIssue
+from polydrive.core.models import MTResult
 
 
 @dataclass
@@ -22,7 +20,9 @@ class MetricEvent:
     """A single metric event record."""
 
     timestamp: datetime
-    event_type: str  # "encoding_check", "glossary_check", "defect_analysis", "translation"
+    event_type: (
+        str  # "encoding_check", "glossary_check", "defect_analysis", "translation"
+    )
     module: str  # "i18n_guard", "glossary", "defect_guard", "mt_gateway"
     data: dict
 
@@ -215,7 +215,11 @@ class MetricsCollector:
             )
             summary.glossary_term_coverage = round(coverage_pct, 2)
             summary.terminology_maturity = round(
-                min(100.0, coverage_pct * 0.9 + (1 - total_inconsistent / max(total_entries_checked, 1)) * 10),
+                min(
+                    100.0,
+                    coverage_pct * 0.9
+                    + (1 - total_inconsistent / max(total_entries_checked, 1)) * 10,
+                ),
                 2,
             )
 
@@ -263,7 +267,9 @@ class MetricsCollector:
                 for e in self._events
             ],
         }
-        path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
 
     def export_prometheus(self) -> str:
         """Export metrics as Prometheus text exposition format."""

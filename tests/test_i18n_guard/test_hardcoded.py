@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from polydrive.core.models import HardcodedStringIssue
 from polydrive.i18n_guard.hardcoded import detect_hardcoded
 

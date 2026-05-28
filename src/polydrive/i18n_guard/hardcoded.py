@@ -12,10 +12,10 @@ _CPP_EXTENSIONS = frozenset({".c", ".cpp", ".h", ".hpp", ".cc", ".cxx", ".hxx"})
 
 # Unicode ranges for CJK and related scripts
 _CJK_RANGES = (
-    ("一", "鿿"),   # CJK Unified Ideographs
-    ("぀", "ゟ"),   # Hiragana
-    ("゠", "ヿ"),   # Katakana
-    ("가", "힯"),   # Hangul Syllables
+    ("一", "鿿"),  # CJK Unified Ideographs
+    ("぀", "ゟ"),  # Hiragana
+    ("゠", "ヿ"),  # Katakana
+    ("가", "힯"),  # Hangul Syllables
 )
 
 
@@ -36,7 +36,7 @@ def _has_non_ascii(text: str) -> bool:
 # Regex to strip C and C++ comments from source text.
 # Handles // line comments and /* block comments */.
 _STRIP_COMMENTS_RE = re.compile(
-    r'//.*?$ | /\* .*? \*/',
+    r"//.*?$ | /\* .*? \*/",
     re.MULTILINE | re.DOTALL | re.VERBOSE,
 )
 
@@ -60,7 +60,8 @@ def _strip_comments(source: str) -> str:
 
 
 def _find_string_literals(
-    source: str, original_source: str,
+    source: str,
+    original_source: str,
 ) -> list[tuple[int, int, str]]:
     """Find string literals and their positions.
 
@@ -113,9 +114,10 @@ def detect_hardcoded(
     exclude_re = re.compile(exclude_pattern) if exclude_pattern else None
 
     if path.is_file():
-        if path.suffix.lower() in _CPP_EXTENSIONS:
-            if not exclude_re or not exclude_re.search(str(path)):
-                _scan_file(path, language, issues)
+        if path.suffix.lower() in _CPP_EXTENSIONS and (
+            not exclude_re or not exclude_re.search(str(path))
+        ):
+            _scan_file(path, language, issues)
     elif path.is_dir():
         for root, _dirs, files in path.walk():  # type: ignore[attr-defined]
             for fname in files:

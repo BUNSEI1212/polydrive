@@ -27,11 +27,11 @@ def _is_binary(path: Path) -> bool:
 def _has_bom(raw: bytes) -> bool:
     """Check for common BOM signatures."""
     return (
-        raw.startswith(b"\xef\xbb\xbf")       # UTF-8 BOM
-        or raw.startswith(b"\xff\xfe")         # UTF-16 LE
-        or raw.startswith(b"\xfe\xff")         # UTF-16 BE
-        or raw.startswith(b"\xff\xfe\x00\x00") # UTF-32 LE
-        or raw.startswith(b"\x00\x00\xfe\xff") # UTF-32 BE
+        raw.startswith(b"\xef\xbb\xbf")  # UTF-8 BOM
+        or raw.startswith(b"\xff\xfe")  # UTF-16 LE
+        or raw.startswith(b"\xfe\xff")  # UTF-16 BE
+        or raw.startswith(b"\xff\xfe\x00\x00")  # UTF-32 LE
+        or raw.startswith(b"\x00\x00\xfe\xff")  # UTF-32 BE
     )
 
 

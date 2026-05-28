@@ -13,20 +13,58 @@ _PDF = "‬"  # Pop Directional Formatting
 
 # Character mapping for CJK visual substitution
 _CJK_MAP = {
-    "A": "乃", "B": "刀", "C": "可", "D": "丁",
-    "E": "叮", "F": "叭", "G": "咔", "H": "周",
-    "I": "口", "J": "己", "K": "叽", "L": "叩",
-    "M": "山", "N": "巴", "O": "口", "P": "巳",
-    "Q": "句", "R": "尺", "S": "双", "T": "七",
-    "U": "凵", "V": "丟", "W": "穴", "X": "义",
-    "Y": "丁", "Z": "九",
-    "a": "丨", "b": "丿", "c": "尸", "d": "己",
-    "e": "工", "f": "干", "g": "夕", "h": "千",
-    "i": "口", "j": "小", "k": "力", "l": "叩",
-    "m": "山", "n": "巴", "o": "口", "p": "巳",
-    "q": "句", "r": "尺", "s": "双", "t": "七",
-    "u": "凵", "v": "丟", "w": "穴", "x": "义",
-    "y": "丁", "z": "九",
+    "A": "乃",
+    "B": "刀",
+    "C": "可",
+    "D": "丁",
+    "E": "叮",
+    "F": "叭",
+    "G": "咔",
+    "H": "周",
+    "I": "口",
+    "J": "己",
+    "K": "叽",
+    "L": "叩",
+    "M": "山",
+    "N": "巴",
+    "O": "口",
+    "P": "巳",
+    "Q": "句",
+    "R": "尺",
+    "S": "双",
+    "T": "七",
+    "U": "凵",
+    "V": "丟",
+    "W": "穴",
+    "X": "义",
+    "Y": "丁",
+    "Z": "九",
+    "a": "丨",
+    "b": "丿",
+    "c": "尸",
+    "d": "己",
+    "e": "工",
+    "f": "干",
+    "g": "夕",
+    "h": "千",
+    "i": "口",
+    "j": "小",
+    "k": "力",
+    "l": "叩",
+    "m": "山",
+    "n": "巴",
+    "o": "口",
+    "p": "巳",
+    "q": "句",
+    "r": "尺",
+    "s": "双",
+    "t": "七",
+    "u": "凵",
+    "v": "丟",
+    "w": "穴",
+    "x": "义",
+    "y": "丁",
+    "z": "九",
 }
 
 
@@ -37,10 +75,18 @@ def _expand_text(text: str) -> str:
     """
     # Basic diacritic mapping for visual pseudo-localization
     accents = {
-        "a": "ä", "e": "ê", "i": "ï",
-        "o": "õ", "u": "û", "n": "ñ",
-        "A": "Ä", "E": "Ê", "I": "Ï",
-        "O": "Õ", "U": "Û", "N": "Ñ",
+        "a": "ä",
+        "e": "ê",
+        "i": "ï",
+        "o": "õ",
+        "u": "û",
+        "n": "ñ",
+        "A": "Ä",
+        "E": "Ê",
+        "I": "Ï",
+        "O": "Õ",
+        "U": "Û",
+        "N": "Ñ",
     }
     expanded = "".join(accents.get(ch, ch) for ch in text)
     # Add ~40% filler
@@ -165,9 +211,7 @@ def pseudo_localize(
     data = json.loads(source.read_text(encoding="utf-8"))
     transformed = _transform_dict(data, modes)
 
-    out_path = output or source.with_name(
-        source.stem + ".pseudo" + source.suffix
-    )
+    out_path = output or source.with_name(source.stem + ".pseudo" + source.suffix)
     out_path.write_text(
         json.dumps(transformed, ensure_ascii=False, indent=2),
         encoding="utf-8",

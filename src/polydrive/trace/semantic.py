@@ -20,7 +20,9 @@ def _is_available() -> bool:
             _TRANSFORMERS_AVAILABLE = True
         except ImportError:
             _TRANSFORMERS_AVAILABLE = False
-            logger.info("sentence-transformers not installed; using position-based matching")
+            logger.info(
+                "sentence-transformers not installed; using position-based matching"
+            )
     return _TRANSFORMERS_AVAILABLE
 
 
@@ -105,9 +107,11 @@ def _semantic_match(
     unmatched_compare = [
         (j, n) for j, n in enumerate(compare_names) if j not in used_compare
     ]
-    for (_, bn), (_, cn) in zip(unmatched_base, unmatched_compare):
+    for (_, bn), (_, cn) in zip(unmatched_base, unmatched_compare, strict=False):
         matches.append(
-            SemanticMatch(base_name=bn, compare_name=cn, similarity=0.0, method="position")
+            SemanticMatch(
+                base_name=bn, compare_name=cn, similarity=0.0, method="position"
+            )
         )
 
     return matches
@@ -118,8 +122,10 @@ def _position_match(
     compare_names: list[str],
 ) -> list[SemanticMatch]:
     matches: list[SemanticMatch] = []
-    for bn, cn in zip(base_names, compare_names):
+    for bn, cn in zip(base_names, compare_names, strict=False):
         matches.append(
-            SemanticMatch(base_name=bn, compare_name=cn, similarity=0.0, method="position")
+            SemanticMatch(
+                base_name=bn, compare_name=cn, similarity=0.0, method="position"
+            )
         )
     return matches

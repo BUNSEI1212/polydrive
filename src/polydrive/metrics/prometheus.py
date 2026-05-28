@@ -6,11 +6,31 @@ from polydrive.metrics.collector import MetricsSummary
 
 # Each metric: (name, help_text, value_extractor)
 _METRICS = [
-    ("polydrive_total_events", "Total metric events collected", lambda s: s.total_events),
-    ("polydrive_encoding_checks_total", "Total encoding checks run", lambda s: s.encoding_checks_run),
-    ("polydrive_encoding_issues_total", "Total encoding issues found", lambda s: s.encoding_issues_found),
-    ("polydrive_encoding_issue_rate", "Encoding issue rate (issues per file)", lambda s: s.encoding_issue_rate),
-    ("polydrive_glossary_checks_total", "Total glossary checks run", lambda s: s.glossary_checks_run),
+    (
+        "polydrive_total_events",
+        "Total metric events collected",
+        lambda s: s.total_events,
+    ),
+    (
+        "polydrive_encoding_checks_total",
+        "Total encoding checks run",
+        lambda s: s.encoding_checks_run,
+    ),
+    (
+        "polydrive_encoding_issues_total",
+        "Total encoding issues found",
+        lambda s: s.encoding_issues_found,
+    ),
+    (
+        "polydrive_encoding_issue_rate",
+        "Encoding issue rate (issues per file)",
+        lambda s: s.encoding_issue_rate,
+    ),
+    (
+        "polydrive_glossary_checks_total",
+        "Total glossary checks run",
+        lambda s: s.glossary_checks_run,
+    ),
     (
         "polydrive_glossary_consistency_issues_total",
         "Total glossary consistency issues",
@@ -21,7 +41,11 @@ _METRICS = [
         "Glossary term translation coverage percentage",
         lambda s: s.glossary_term_coverage,
     ),
-    ("polydrive_defects_analyzed_total", "Total defect reports analyzed", lambda s: s.defects_analyzed),
+    (
+        "polydrive_defects_analyzed_total",
+        "Total defect reports analyzed",
+        lambda s: s.defects_analyzed,
+    ),
     (
         "polydrive_defect_quality_score_avg",
         "Average defect quality score",
@@ -32,7 +56,11 @@ _METRICS = [
         "Defect reports with quality score below 50",
         lambda s: s.low_quality_defects,
     ),
-    ("polydrive_translations_total", "Total translations made", lambda s: s.translations_made),
+    (
+        "polydrive_translations_total",
+        "Total translations made",
+        lambda s: s.translations_made,
+    ),
     (
         "polydrive_characters_translated_total",
         "Total characters translated",
@@ -48,7 +76,11 @@ _METRICS = [
         "Percentage of translations where glossary was applied",
         lambda s: s.glossary_hit_rate,
     ),
-    ("polydrive_i18n_health_score", "Composite i18n health score", lambda s: s.i18n_health_score),
+    (
+        "polydrive_i18n_health_score",
+        "Composite i18n health score",
+        lambda s: s.i18n_health_score,
+    ),
     (
         "polydrive_terminology_maturity",
         "Terminology maturity score",
@@ -68,16 +100,20 @@ def format_prometheus(summary: MetricsSummary) -> str:
 
     # Language pair breakdown
     for pair, count in sorted(summary.translations_by_language_pair.items()):
-        safe_label = pair.replace(":", "_").replace("-", "_")
-        lines.append(f'# HELP polydrive_translations_by_pair "Translations by language pair"')
-        lines.append(f'# TYPE polydrive_translations_by_pair counter')
+        pair.replace(":", "_").replace("-", "_")
+        lines.append(
+            '# HELP polydrive_translations_by_pair "Translations by language pair"'
+        )
+        lines.append("# TYPE polydrive_translations_by_pair counter")
         lines.append(f'polydrive_translations_by_pair{{pair="{pair}"}} {count}')
 
     # Quality distribution
     for bucket, count in sorted(summary.defect_quality_distribution.items()):
-        safe_bucket = bucket.replace("-", "_")
-        lines.append(f'# HELP polydrive_defect_quality_bucket "Defect quality score distribution"')
-        lines.append(f'# TYPE polydrive_defect_quality_bucket counter')
+        bucket.replace("-", "_")
+        lines.append(
+            '# HELP polydrive_defect_quality_bucket "Defect quality score distribution"'
+        )
+        lines.append("# TYPE polydrive_defect_quality_bucket counter")
         lines.append(f'polydrive_defect_quality_bucket{{bucket="{bucket}"}} {count}')
 
     return "\n".join(lines) + "\n"

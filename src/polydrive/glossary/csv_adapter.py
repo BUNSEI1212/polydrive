@@ -5,12 +5,10 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-from polydrive.core.models import (
-    Glossary,
-    LocalizedTerm,
-    TermCategory,
-    TermEntry,
-)
+from polydrive.core.models import Glossary
+from polydrive.core.models import LocalizedTerm
+from polydrive.core.models import TermCategory
+from polydrive.core.models import TermEntry
 
 
 def import_csv(file_path: Path, domain: str = "automotive") -> Glossary:

@@ -5,7 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+from pydantic import Field
 
 DEFAULT_CONFIG_FILENAME = ".polydrive.yaml"
 
@@ -42,10 +43,7 @@ def load_config(path: str | Path | None = None) -> PolyDriveConfig:
     ``.polydrive.yaml`` in the current directory, then ``~/.polydrive.yaml``.
     Falls back to defaults when no file is found.
     """
-    if path is not None:
-        candidates = [Path(path)]
-    else:
-        candidates = _search_paths()
+    candidates = [Path(path)] if path is not None else _search_paths()
 
     for candidate in candidates:
         if candidate.is_file():

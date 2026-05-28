@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -95,7 +95,14 @@ def collect_aspice_evidence(project_dir: Path) -> list[ASPICEEvidence]:
 
     # Gather all files (non-hidden, non-node_modules etc.)
     all_files: list[Path] = []
-    skip_dirs = {".git", "node_modules", "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache"}
+    skip_dirs = {
+        ".git",
+        "node_modules",
+        "__pycache__",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+    }
     for fp in project_dir.rglob("*"):
         if any(part in skip_dirs for part in fp.relative_to(project_dir).parts):
             continue
@@ -222,7 +229,8 @@ def collect_aspice_evidence(project_dir: Path) -> list[ASPICEEvidence]:
     glossary_files = [
         fp
         for fp in all_files
-        if fp.suffix in (".tbx", ".csv") and re.search(r"(?i)glossary|terminology|term", str(fp))
+        if fp.suffix in (".tbx", ".csv")
+        and re.search(r"(?i)glossary|terminology|term", str(fp))
     ]
     if glossary_files:
         evidence.append(

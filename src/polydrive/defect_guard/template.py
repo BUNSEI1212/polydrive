@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from polydrive.core.models import DefectReport
 
@@ -67,15 +67,21 @@ def validate_report(report: DefectReport, template: DefectTemplate) -> list[str]
             violations.append(
                 f"Field '{field_name}' too long: {len(str_val)} > {rule.max_length}"
             )
-        if rule.pattern and isinstance(value, str):
-            if not re.search(rule.pattern, value):
-                violations.append(
-                    f"Field '{field_name}' does not match pattern: {rule.pattern}"
-                )
-        if rule.allowed_values and isinstance(value, str):
-            if value.lower() not in [v.lower() for v in rule.allowed_values]:
-                violations.append(
-                    f"Field '{field_name}' value '{value}' not in allowed values: {rule.allowed_values}"
-                )
+        if (
+            rule.pattern
+            and isinstance(value, str)
+            and not re.search(rule.pattern, value)
+        ):
+            violations.append(
+                f"Field '{field_name}' does not match pattern: {rule.pattern}"
+            )
+        if (
+            rule.allowed_values
+            and isinstance(value, str)
+            and value.lower() not in [v.lower() for v in rule.allowed_values]
+        ):
+            violations.append(
+                f"Field '{field_name}' value '{value}' not in allowed values: {rule.allowed_values}"
+            )
 
     return violations

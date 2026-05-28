@@ -2,29 +2,22 @@
 
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 
 import pytest
 
-from polydrive.core.models import (
-    Glossary,
-    LocalizedTerm,
-    MTResult,
-    MTUsageStats,
-    TermEntry,
-)
+from polydrive.core.models import Glossary
+from polydrive.core.models import LocalizedTerm
+from polydrive.core.models import MTResult
+from polydrive.core.models import TermEntry
 from polydrive.mt_gateway import MTGateway
 from polydrive.mt_gateway.cache import TranslationCache
 from polydrive.mt_gateway.engine_base import MTEngine
-from polydrive.mt_gateway.engines import (
-    AmazonTranslateEngine,
-    DeepLEngine,
-    GoogleCloudEngine,
-    LibreTranslateEngine,
-)
+from polydrive.mt_gateway.engines import AmazonTranslateEngine
+from polydrive.mt_gateway.engines import DeepLEngine
+from polydrive.mt_gateway.engines import GoogleCloudEngine
+from polydrive.mt_gateway.engines import LibreTranslateEngine
 from polydrive.mt_gateway.glossary_enforcer import enforce_glossary
-
 
 # ── Mock engine for testing ─────────────────────────────────────────
 
@@ -100,7 +93,7 @@ class TestMTGatewayCache:
         gw.register(MockEngine())
         gw.enable_cache(str(db))
 
-        r1 = gw.translate("hello", "en", "zh")
+        _r1 = gw.translate("hello", "en", "zh")
         r2 = gw.translate("world", "en", "zh")
         assert r2.engine == "mock"  # different text, cache miss
         gw.close()
@@ -134,7 +127,9 @@ class TestMTGatewayGlossary:
         gw = MTGateway()
         gw.register(MockEngine())
         result = gw.translate("brake", "en", "zh", glossary=glossary)
-        assert result.glossary_applied is False  # mock engine output doesn't contain the term
+        assert (
+            result.glossary_applied is False
+        )  # mock engine output doesn't contain the term
         gw.close()
 
     def test_glossary_enforcement_with_variant(self) -> None:
@@ -151,6 +146,7 @@ class TestMTGatewayGlossary:
                 ),
             ],
         )
+
         # Use a custom mock that produces something containing a glossary variant
         class VariantMock(MTEngine):
             @property
@@ -333,14 +329,14 @@ class TestEngineLazyImport:
             engine.translate("hello", "en", "zh")
 
     def test_amazon_engine_raises_on_missing_package(self) -> None:
-        engine = AmazonTranslateEngine()
-        try:
-            import boto3  # type: ignore[import-untyped]
+        import importlib.util
 
+        if importlib.util.find_spec("boto3") is not None:
             pytest.skip("boto3 is installed; cannot test ImportError path")
-        except ImportError:
-            with pytest.raises(ImportError, match="boto3"):
-                engine.translate("hello", "en", "zh")
+
+        engine = AmazonTranslateEngine()
+        with pytest.raises(ImportError, match="boto3"):
+            engine.translate("hello", "en", "zh")
 
 
 # ── Engine base tests ───────────────────────────────────────────────

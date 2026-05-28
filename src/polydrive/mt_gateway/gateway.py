@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import time
 
-from polydrive.core.models import Glossary, MTResult, MTUsageStats
+from polydrive.core.models import Glossary
+from polydrive.core.models import MTResult
+from polydrive.core.models import MTUsageStats
 from polydrive.mt_gateway.cache import TranslationCache
 from polydrive.mt_gateway.engine_base import MTEngine
 from polydrive.mt_gateway.glossary_enforcer import enforce_glossary
@@ -115,7 +117,9 @@ class MTGateway:
     ) -> list[MTResult]:
         """Translate a list of texts sequentially."""
         return [
-            self.translate(t, source_lang, target_lang, engine=engine, glossary=glossary)
+            self.translate(
+                t, source_lang, target_lang, engine=engine, glossary=glossary
+            )
             for t in texts
         ]
 

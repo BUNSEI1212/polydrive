@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 import yaml
 
-from polydrive.core.config import PolyDriveConfig, load_config, save_config
+from polydrive.core.config import PolyDriveConfig
+from polydrive.core.config import load_config
+from polydrive.core.config import save_config
 
 
 class TestPolyDriveConfigDefaults:
@@ -104,7 +105,9 @@ class TestSaveConfig:
             default_target_langs=["en", "es", "it"],
             glossary_path="/path/to/glossary.tbx",
             mt_engine="deepl",
-            mt_engines_config={"deepl": {"api_key": "key123", "endpoint": "https://api.deepl.com"}},
+            mt_engines_config={
+                "deepl": {"api_key": "key123", "endpoint": "https://api.deepl.com"}
+            },
             encoding_require_utf8=True,
             encoding_fail_on_bom=True,
             encoding_exclude=["*.bin", "*.exe"],

@@ -5,7 +5,8 @@ from __future__ import annotations
 from enum import Enum
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+from pydantic import Field
 
 
 class TermCategory(str, Enum):
@@ -44,7 +45,9 @@ class LocalizedTerm(BaseModel):
     term: str = Field(..., description="The term text")
     definition: str | None = Field(None, description="Definition in this language")
     usage_example: str | None = Field(None, description="Usage example")
-    part_of_speech: str | None = Field(None, description="Part of speech (noun, verb, etc.)")
+    part_of_speech: str | None = Field(
+        None, description="Part of speech (noun, verb, etc.)"
+    )
     forbidden: bool = Field(False, description="This form is forbidden/deprecated")
 
     def __hash__(self) -> int:
@@ -99,9 +102,7 @@ class Glossary(BaseModel):
                     break
         return results
 
-    def check_consistency(
-        self, lang_pair: LangPair
-    ) -> list[ConsistencyIssue]:
+    def check_consistency(self, lang_pair: LangPair) -> list[ConsistencyIssue]:
         """Check for terminology consistency issues between two languages."""
         issues: list[ConsistencyIssue] = []
 
@@ -160,7 +161,8 @@ class ConsistencyIssue(BaseModel):
 
     severity: str = Field(..., description="Issue severity: error, warning, info")
     issue_type: str = Field(
-        ..., description="Type of issue: inconsistent_translation, missing_translation, etc."
+        ...,
+        description="Type of issue: inconsistent_translation, missing_translation, etc.",
     )
     source_lang: str = Field(..., description="Source language")
     target_lang: str = Field(..., description="Target language")
@@ -238,10 +240,14 @@ class DefectQualityResult(BaseModel):
 
     report_id: str
     composite_score: float = Field(..., description="Overall quality score 0-100")
-    field_completeness: float = Field(..., description="Required fields completeness 0-100")
+    field_completeness: float = Field(
+        ..., description="Required fields completeness 0-100"
+    )
     text_quality: float = Field(..., description="Text clarity score 0-100")
     reproducibility: float = Field(..., description="Reproducibility score 0-100")
-    terminology_compliance: float = Field(default=100.0, description="Terminology compliance 0-100")
+    terminology_compliance: float = Field(
+        default=100.0, description="Terminology compliance 0-100"
+    )
     missing_fields: list[str] = Field(default_factory=list)
     improvement_suggestions: list[str] = Field(default_factory=list)
     detected_language: str | None = None

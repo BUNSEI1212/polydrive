@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
-from polydrive.metrics.collector import MetricsCollector, MetricsSummary, compute_metrics
+from polydrive.metrics.collector import MetricsCollector
+from polydrive.metrics.collector import MetricsSummary
+from polydrive.metrics.collector import compute_metrics
 
 __all__ = ["MetricsCollector", "MetricsSummary", "compute_metrics"]

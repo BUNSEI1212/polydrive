@@ -7,24 +7,99 @@ from collections import Counter
 from dataclasses import dataclass
 
 # Stopwords to filter from extracted terms — these are not valid term components.
-_STOPWORDS = frozenset({
-    "the", "a", "an", "is", "are", "was", "were", "has", "have", "had",
-    "does", "do", "can", "will", "shall", "should", "would", "could",
-    "may", "might", "must", "and", "or", "but", "not", "no", "of", "in",
-    "on", "at", "to", "for", "with", "from", "by", "as", "into",
-    "through", "after", "before", "above", "below", "between", "out",
-    "off", "over", "under", "again", "then", "once", "here", "there",
-    "when", "where", "why", "how", "all", "each", "few", "more", "most",
-    "other", "some", "such", "than", "too", "very",
-})
+_STOPWORDS = frozenset(
+    {
+        "the",
+        "a",
+        "an",
+        "is",
+        "are",
+        "was",
+        "were",
+        "has",
+        "have",
+        "had",
+        "does",
+        "do",
+        "can",
+        "will",
+        "shall",
+        "should",
+        "would",
+        "could",
+        "may",
+        "might",
+        "must",
+        "and",
+        "or",
+        "but",
+        "not",
+        "no",
+        "of",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "with",
+        "from",
+        "by",
+        "as",
+        "into",
+        "through",
+        "after",
+        "before",
+        "above",
+        "below",
+        "between",
+        "out",
+        "off",
+        "over",
+        "under",
+        "again",
+        "then",
+        "once",
+        "here",
+        "there",
+        "when",
+        "where",
+        "why",
+        "how",
+        "all",
+        "each",
+        "few",
+        "more",
+        "most",
+        "other",
+        "some",
+        "such",
+        "than",
+        "too",
+        "very",
+    }
+)
 
 # Function-word fragments that indicate KeyBERT artifacts rather than real terms.
-_FRAGMENT_PREFIXES = frozenset({
-    "uses", "detects", "prevents", "builds", "based", "upon",
-})
-_FRAGMENT_SUFFIXES = frozenset({
-    "uses", "detects", "prevents", "builds", "based", "upon",
-})
+_FRAGMENT_PREFIXES = frozenset(
+    {
+        "uses",
+        "detects",
+        "prevents",
+        "builds",
+        "based",
+        "upon",
+    }
+)
+_FRAGMENT_SUFFIXES = frozenset(
+    {
+        "uses",
+        "detects",
+        "prevents",
+        "builds",
+        "based",
+        "upon",
+    }
+)
 
 _KEYBERT_AVAILABLE: bool | None = None
 
@@ -176,12 +251,16 @@ def _keybert_extract(text: str, max_terms: int) -> list[CandidateTerm]:
         freq[phrase] = text.lower().count(phrase.lower())
 
     return [
-        CandidateTerm(term=phrase, score=round(score, 4), frequency=freq[phrase], source="keybert")
+        CandidateTerm(
+            term=phrase, score=round(score, 4), frequency=freq[phrase], source="keybert"
+        )
         for phrase, score in keywords
     ]
 
 
-def _frequency_extract(text: str, min_frequency: int, max_terms: int) -> list[CandidateTerm]:
+def _frequency_extract(
+    text: str, min_frequency: int, max_terms: int
+) -> list[CandidateTerm]:
     """Rule-based extraction using regex noun phrase patterns."""
     # Extract potential technical terms: 2-4 word phrases with capitalization or technical suffixes
     patterns = [
@@ -193,7 +272,9 @@ def _frequency_extract(text: str, min_frequency: int, max_terms: int) -> list[Ca
     for pat in patterns:
         for match in re.findall(pat, text):
             phrase = match.strip()
-            if len(phrase) >= 3 and not phrase.lower().startswith(("the ", "this ", "that ")):
+            if len(phrase) >= 3 and not phrase.lower().startswith(
+                ("the ", "this ", "that ")
+            ):
                 candidates[phrase] += 1
 
     # Also extract hyphenated compounds
@@ -206,7 +287,12 @@ def _frequency_extract(text: str, min_frequency: int, max_terms: int) -> list[Ca
         if count >= min_frequency:
             score = count / total if total > 0 else 0
             results.append(
-                CandidateTerm(term=phrase, score=round(score, 4), frequency=count, source="frequency")
+                CandidateTerm(
+                    term=phrase,
+                    score=round(score, 4),
+                    frequency=count,
+                    source="frequency",
+                )
             )
 
     return results

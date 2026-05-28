@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
+import contextlib
 from pathlib import Path
 
 from lxml import etree
 
-from polydrive.core.models import (
-    Glossary,
-    LocalizedTerm,
-    TermCategory,
-    TermEntry,
-    TermStatus,
-)
+from polydrive.core.models import Glossary
+from polydrive.core.models import LocalizedTerm
+from polydrive.core.models import TermCategory
+from polydrive.core.models import TermEntry
 
 _NS = "urn:iso:std:iso:30042:ed-2"
 _NS_MAP = {None: _NS}
@@ -66,10 +64,8 @@ def _parse_admin(concept: etree._Element) -> tuple[TermCategory, str | None]:
             if admin_note.get("type") == "termCategory":
                 raw = _text_of(admin_note)
                 if raw:
-                    try:
+                    with contextlib.suppress(ValueError):
                         category = TermCategory(raw)
-                    except ValueError:
-                        pass
         raw_note = admin_sec.find(_tag("note"))
         if raw_note is not None:
             note = _text_of(raw_note)

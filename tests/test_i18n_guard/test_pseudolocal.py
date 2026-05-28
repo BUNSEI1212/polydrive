@@ -5,14 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
-from polydrive.i18n_guard.pseudolocal import (
-    _cjk_text,
-    _expand_text,
-    _rtl_wrap,
-    pseudo_localize,
-)
+from polydrive.i18n_guard.pseudolocal import _cjk_text
+from polydrive.i18n_guard.pseudolocal import _expand_text
+from polydrive.i18n_guard.pseudolocal import _rtl_wrap
+from polydrive.i18n_guard.pseudolocal import pseudo_localize
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 
@@ -67,7 +63,7 @@ class TestPseudoLocalizeCJK:
     def test_cjk_json_file(self, tmp_path: Path) -> None:
         """Should pseudo-localize a JSON locale file in CJK mode."""
         out = tmp_path / "pseudo_cjk.json"
-        result = pseudo_localize(
+        _result = pseudo_localize(
             FIXTURES / "locale_en.json",
             mode="cjk",
             output=out,
@@ -91,7 +87,7 @@ class TestPseudoLocalizeRTL:
     def test_rtl_json_file(self, tmp_path: Path) -> None:
         """Should pseudo-localize a JSON locale file in RTL mode."""
         out = tmp_path / "pseudo_rtl.json"
-        result = pseudo_localize(
+        _result = pseudo_localize(
             FIXTURES / "locale_en.json",
             mode="rtl",
             output=out,
@@ -108,7 +104,7 @@ class TestPseudoLocalizeCombined:
     def test_expand_plus_cjk(self, tmp_path: Path) -> None:
         """Should combine expand and CJK modes."""
         out = tmp_path / "pseudo_both.json"
-        result = pseudo_localize(
+        _result = pseudo_localize(
             FIXTURES / "locale_en.json",
             mode="expand+cjk",
             output=out,
@@ -121,7 +117,7 @@ class TestPseudoLocalizeCombined:
     def test_comma_separated_modes(self, tmp_path: Path) -> None:
         """Should accept comma-separated modes."""
         out = tmp_path / "pseudo_comma.json"
-        result = pseudo_localize(
+        _result = pseudo_localize(
             FIXTURES / "locale_en.json",
             mode="expand,cjk",
             output=out,
@@ -152,7 +148,7 @@ class TestPseudoLocalizeEdgeCases:
         # Copy fixture to tmp_path to avoid polluting fixtures dir
         src = tmp_path / "locale.json"
         src.write_text('{"key": "value"}', encoding="utf-8")
-        result = pseudo_localize(src, mode="expand")
+        _result = pseudo_localize(src, mode="expand")
         expected = tmp_path / "locale.pseudo.json"
         assert expected.exists()
 

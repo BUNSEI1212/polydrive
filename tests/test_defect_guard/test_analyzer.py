@@ -4,13 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from polydrive.core.models import (
-    DefectQualityResult,
-    DefectReport,
-    Glossary,
-    LocalizedTerm,
-    TermEntry,
-)
+from polydrive.core.models import DefectReport
+from polydrive.core.models import Glossary
+from polydrive.core.models import LocalizedTerm
+from polydrive.core.models import TermEntry
 from polydrive.defect_guard import DefectAnalyzer
 
 
@@ -120,7 +117,11 @@ class TestMinimalReport:
         assert result.composite_score < 40
 
     def test_missing_fields(self, analyzer: DefectAnalyzer) -> None:
-        result = analyzer.analyzer(_minimal_report()) if False else analyzer.analyze(_minimal_report())
+        result = (
+            analyzer.analyzer(_minimal_report())
+            if False
+            else analyzer.analyze(_minimal_report())
+        )
         assert "title" in result.missing_fields
         assert "description" in result.missing_fields
         assert "steps_to_reproduce" in result.missing_fields

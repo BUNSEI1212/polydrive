@@ -36,11 +36,13 @@ def enforce_glossary(
         # only when it differs from what's already there (catch variant spellings/casing).
         pattern = re.compile(re.escape(approved), re.IGNORECASE)
         if pattern.search(enforced):
-            # Check if there's any variant that needs fixing
-            def _replace(match: re.Match[str]) -> str:
-                if match.group(0) != approved:
-                    applied.append((match.group(0), approved))
-                    return approved
+            # Bind loop variable to avoid closure issue (B023).
+            _approved = approved
+
+            def _replace(match: re.Match[str], _a: str = _approved) -> str:
+                if match.group(0) != _a:
+                    applied.append((match.group(0), _a))
+                    return _a
                 return match.group(0)
 
             enforced = pattern.sub(_replace, enforced)

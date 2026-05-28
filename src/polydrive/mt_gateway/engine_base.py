@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 
 from polydrive.core.models import MTResult
 
@@ -29,5 +30,5 @@ class MTEngine(ABC):
         """Return set of supported language codes. Empty set means 'unknown'."""
         return set()
 
-    def close(self) -> None:
+    def close(self) -> None:  # noqa: B027
         """Release resources held by this engine."""

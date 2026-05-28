@@ -4,9 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
-from polydrive.trace.gherkin_sync import parse_feature, sync_features
+from polydrive.trace.gherkin_sync import parse_feature
+from polydrive.trace.gherkin_sync import sync_features
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 

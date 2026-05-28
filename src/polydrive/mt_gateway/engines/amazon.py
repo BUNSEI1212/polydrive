@@ -12,7 +12,11 @@ class AmazonTranslateEngine(MTEngine):
     """AWS Amazon Translate engine."""
 
     def __init__(
-        self, region: str = "us-east-1", *, aws_access_key_id: str | None = None, aws_secret_access_key: str | None = None
+        self,
+        region: str = "us-east-1",
+        *,
+        aws_access_key_id: str | None = None,
+        aws_secret_access_key: str | None = None,
     ) -> None:
         self._region = region
         self._aws_access_key_id = aws_access_key_id
@@ -55,9 +59,7 @@ class AmazonTranslateEngine(MTEngine):
             character_count=len(text),
             latency_ms=round(elapsed_ms, 2),
             metadata={
-                "applied_terminologies": str(
-                    response.get("AppliedTerminologies", [])
-                ),
+                "applied_terminologies": str(response.get("AppliedTerminologies", [])),
             },
         )
 

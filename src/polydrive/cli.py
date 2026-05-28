@@ -4,34 +4,41 @@ from __future__ import annotations
 
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import typer
 from rich.console import Console
 from rich.table import Table
+
+from polydrive import __version__
+from polydrive.core.config import PolyDriveConfig
+from polydrive.core.config import load_config
+from polydrive.core.config import save_config
+from polydrive.core.models import LangPair
+from polydrive.defect_guard import DefectAnalyzer
+from polydrive.defect_guard.template import load_template
+from polydrive.defect_guard.template import validate_report
+from polydrive.glossary import import_csv
+from polydrive.glossary import parse_tbx
+from polydrive.glossary import write_tbx
+from polydrive.i18n_guard import check_encoding
+from polydrive.i18n_guard import detect_hardcoded
+from polydrive.i18n_guard import pseudo_localize
+from polydrive.metrics.collector import MetricsSummary
+from polydrive.metrics.collector import load_collector_from_json
+from polydrive.mt_gateway import MTGateway
+from polydrive.mt_gateway.engines.libretranslate import LibreTranslateEngine
+from polydrive.trace.aspice import collect_aspice_evidence
+from polydrive.trace.gherkin_sync import sync_features
+from polydrive.trace.unece import check_unece_r121
 
 # Ensure UTF-8 output on Windows to avoid GBK encoding errors with CJK text
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
 
 rprint = Console().print
-
-from polydrive import __version__
-from polydrive.core.config import PolyDriveConfig, load_config, save_config
-from polydrive.core.models import LangPair
-from polydrive.defect_guard import DefectAnalyzer
-from polydrive.defect_guard.template import load_template, validate_report
-from polydrive.glossary import import_csv, parse_tbx, write_tbx
-from polydrive.i18n_guard import check_encoding, detect_hardcoded, pseudo_localize
-from polydrive.metrics.collector import MetricsSummary, load_collector_from_json
-
-from polydrive.mt_gateway import MTGateway
-from polydrive.mt_gateway.engine_base import MTEngine
-from polydrive.mt_gateway.engines.libretranslate import LibreTranslateEngine
-from polydrive.trace.aspice import collect_aspice_evidence
-from polydrive.trace.gherkin_sync import parse_feature, sync_features
-from polydrive.trace.unece import check_unece_r121
 
 # Module-level output format, set by the main callback.
 _output_format = "text"
@@ -139,7 +146,9 @@ def main(
 def glossary_import(
     source: str = typer.Argument(..., help="Path to glossary file (TBX/CSV)"),
     domain: str = typer.Option("automotive", help="Terminology domain"),
-    format: str | None = typer.Option(None, "--format", "-f", help="Force format (tbx/csv)"),
+    format: str | None = typer.Option(
+        None, "--format", "-f", help="Force format (tbx/csv)"
+    ),
 ) -> None:
     """Import a terminology glossary from TBX or CSV."""
     src_path = Path(source)
@@ -155,7 +164,9 @@ def glossary_import(
         elif suffix == ".csv":
             fmt = "csv"
         else:
-            rprint(f"[red]Error:[/red] Cannot detect format from extension '{suffix}'. Use --format.")
+            rprint(
+                f"[red]Error:[/red] Cannot detect format from extension '{suffix}'. Use --format."
+            )
             raise typer.Exit(1)
 
     if fmt == "tbx":
@@ -179,7 +190,11 @@ def glossary_import(
 
         for entry in glossary.entries[:20]:
             src = entry.get_term(glossary.source_lang)
-            tgt = entry.get_term("zh") or entry.get_term("zh-Hans") or entry.get_term("de")
+            tgt = (
+                entry.get_term("zh")
+                or entry.get_term("zh-Hans")
+                or entry.get_term("de")
+            )
             table.add_row(
                 entry.id,
                 src.term if src else "-",
@@ -197,7 +212,11 @@ def glossary_import(
         "entries": [
             {
                 "id": e.id,
-                "source_term": (e.get_term(glossary.source_lang).term if e.get_term(glossary.source_lang) else None),
+                "source_term": (
+                    e.get_term(glossary.source_lang).term
+                    if e.get_term(glossary.source_lang)
+                    else None
+                ),
                 "target_term": (
                     (e.get_term("zh") or e.get_term("zh-Hans") or e.get_term("de")).term
                     if (e.get_term("zh") or e.get_term("zh-Hans") or e.get_term("de"))
@@ -224,7 +243,7 @@ def glossary_check(
 
     parts = lang_pair.split(":")
     if len(parts) != 2:
-        rprint(f"[red]Error:[/red] Invalid lang pair format. Use 'en:zh'.")
+        rprint("[red]Error:[/red] Invalid lang pair format. Use 'en:zh'.")
         raise typer.Exit(1)
 
     pair = LangPair(source=parts[0], target=parts[1])
@@ -237,7 +256,9 @@ def glossary_check(
 
     rprint(f"[yellow]Found {len(issues)} issues[/yellow] for {lang_pair}:\n")
     for issue in issues:
-        color = {"error": "red", "warning": "yellow", "info": "blue"}.get(issue.severity, "white")
+        color = {"error": "red", "warning": "yellow", "info": "blue"}.get(
+            issue.severity, "white"
+        )
         rprint(
             f"  [{color}]{issue.severity.upper()}[/{color}] "
             f"[{color}]{issue.issue_type}[/{color}]: "
@@ -304,9 +325,13 @@ def glossary_list(
 @glossary_app.command("extract")
 def glossary_extract(
     path: str = typer.Argument(..., help="Path to source files or a single text file"),
-    min_frequency: int = typer.Option(2, "--min-frequency", "-n", help="Minimum term frequency"),
+    min_frequency: int = typer.Option(
+        2, "--min-frequency", "-n", help="Minimum term frequency"
+    ),
     max_terms: int = typer.Option(50, "--max", help="Maximum terms to extract"),
-    output: str | None = typer.Option(None, "--output", "-o", help="Output file path (JSON)"),
+    output: str | None = typer.Option(
+        None, "--output", "-o", help="Output file path (JSON)"
+    ),
 ) -> None:
     """Extract candidate terminology from requirements or specification documents."""
     from polydrive.glossary.extractor import extract_terms
@@ -349,10 +374,17 @@ def glossary_extract(
         import json as _json
 
         data = [
-            {"term": ct.term, "score": ct.score, "frequency": ct.frequency, "source": ct.source}
+            {
+                "term": ct.term,
+                "score": ct.score,
+                "frequency": ct.frequency,
+                "source": ct.source,
+            }
             for ct in candidates
         ]
-        Path(output).write_text(_json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        Path(output).write_text(
+            _json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         rprint(f"\n[green]Exported[/green] {len(candidates)} candidates to {output}")
 
 
@@ -362,9 +394,15 @@ def glossary_extract(
 @i18n_app.command("check-encoding")
 def i18n_check_encoding(
     path: str = typer.Argument(..., help="Path to check (file or directory)"),
-    require_utf8: bool = typer.Option(False, "--require-utf8", help="Fail if files are not UTF-8"),
-    fail_on_bom: bool = typer.Option(False, "--fail-on-bom", help="Fail if BOM is detected"),
-    output_format: str = typer.Option("text", "--output", "-o", help="Output format (text/json)"),
+    require_utf8: bool = typer.Option(
+        False, "--require-utf8", help="Fail if files are not UTF-8"
+    ),
+    fail_on_bom: bool = typer.Option(
+        False, "--fail-on-bom", help="Fail if BOM is detected"
+    ),
+    output_format: str = typer.Option(
+        "text", "--output", "-o", help="Output format (text/json)"
+    ),
 ) -> None:
     """Check file encodings and detect issues."""
     target = Path(path)
@@ -404,7 +442,9 @@ def i18n_check_encoding(
 def i18n_detect_hardcoded(
     path: str = typer.Argument(..., help="Path to source files"),
     lang: str = typer.Option("cpp", "--lang", "-l", help="Source language (cpp/c)"),
-    exclude: str | None = typer.Option(None, "--exclude", help="Exclude pattern (glob)"),
+    exclude: str | None = typer.Option(
+        None, "--exclude", help="Exclude pattern (glob)"
+    ),
 ) -> None:
     """Detect hardcoded non-ASCII strings in source code."""
     target = Path(path)
@@ -508,10 +548,13 @@ def i18n_validate_qt(
 @defect_app.command("analyze")
 def defect_analyze(
     input: str = typer.Option(..., "--input", "-i", help="Path to defect report JSON"),
-    glossary: str | None = typer.Option(None, "--glossary", "-g", help="Path to glossary file (TBX)"),
+    glossary: str | None = typer.Option(
+        None, "--glossary", "-g", help="Path to glossary file (TBX)"
+    ),
 ) -> None:
     """Analyze a single defect report for quality."""
-    from polydrive.core.models import DefectReport, Glossary
+    from polydrive.core.models import DefectReport
+    from polydrive.core.models import Glossary
 
     input_path = Path(input)
     if not input_path.exists():
@@ -531,8 +574,12 @@ def defect_analyze(
 
 @defect_app.command("batch")
 def defect_batch(
-    input: str = typer.Option(..., "--input", "-i", help="Path to JSON array of defect reports"),
-    output: str = typer.Option(..., "--output", "-o", help="Output path for analysis results JSON"),
+    input: str = typer.Option(
+        ..., "--input", "-i", help="Path to JSON array of defect reports"
+    ),
+    output: str = typer.Option(
+        ..., "--output", "-o", help="Output path for analysis results JSON"
+    ),
 ) -> None:
     """Batch-analyze multiple defect reports."""
     from polydrive.core.models import DefectReport
@@ -549,7 +596,9 @@ def defect_batch(
     analyzer = DefectAnalyzer()
     results = [analyzer.analyze(r) for r in reports]
     output_path.write_text(
-        json.dumps([r.model_dump(mode="json") for r in results], indent=2, ensure_ascii=False),
+        json.dumps(
+            [r.model_dump(mode="json") for r in results], indent=2, ensure_ascii=False
+        ),
         encoding="utf-8",
     )
     rprint(f"[green]Analyzed[/green] {len(results)} reports -> {output_path}")
@@ -579,7 +628,9 @@ def defect_validate_template(
     if not violations:
         rprint(f"[green]Report passes template '{tmpl.name}'[/green]")
     else:
-        rprint(f"[yellow]{len(violations)} violation(s) against template '{tmpl.name}':[/yellow]")
+        rprint(
+            f"[yellow]{len(violations)} violation(s) against template '{tmpl.name}':[/yellow]"
+        )
         for v in violations:
             rprint(f"  - {v}")
         raise typer.Exit(1)
@@ -602,8 +653,10 @@ def metrics_summary(
     summary = collector.compute_summary()
 
     def _print_tables() -> None:
-        rprint(f"[bold]PolyDrive Metrics Summary[/bold]")
-        rprint(f"  Period: {summary.period_start or 'N/A'} - {summary.period_end or 'N/A'}")
+        rprint("[bold]PolyDrive Metrics Summary[/bold]")
+        rprint(
+            f"  Period: {summary.period_start or 'N/A'} - {summary.period_end or 'N/A'}"
+        )
         rprint(f"  Total events: {summary.total_events}")
 
         table = Table(title="Encoding")
@@ -639,8 +692,12 @@ def metrics_summary(
         table.add_row("Glossary hit rate", f"{summary.glossary_hit_rate:.1f}%")
         rprint(table)
 
-        rprint(f"\n[bold green]i18n Health Score:[/bold green] {summary.i18n_health_score:.1f}")
-        rprint(f"[bold green]Terminology Maturity:[/bold green] {summary.terminology_maturity:.1f}")
+        rprint(
+            f"\n[bold green]i18n Health Score:[/bold green] {summary.i18n_health_score:.1f}"
+        )
+        rprint(
+            f"[bold green]Terminology Maturity:[/bold green] {summary.terminology_maturity:.1f}"
+        )
 
     json_data = summary.model_dump(mode="json")
     _output(json_data, _print_tables)
@@ -663,7 +720,9 @@ def metrics_prometheus(
 @metrics_app.command("report")
 def metrics_report(
     input: str = typer.Option(..., "--input", "-i", help="Path to metrics JSON file"),
-    output: str = typer.Option("report.html", "--output", "-o", help="Output HTML file path"),
+    output: str = typer.Option(
+        "report.html", "--output", "-o", help="Output HTML file path"
+    ),
 ) -> None:
     """Generate an HTML report from metrics data."""
     in_path = Path(input)
@@ -703,10 +762,10 @@ th {{ background: #3498db; color: white; }}
 </head>
 <body>
 <h1>PolyDrive Metrics Report</h1>
-<p>Period: {summary.period_start or 'N/A'} &mdash; {summary.period_end or 'N/A'}</p>
+<p>Period: {summary.period_start or "N/A"} &mdash; {summary.period_end or "N/A"}</p>
 
 <h2>i18n Health Score</h2>
-<p class="score {'good' if summary.i18n_health_score >= 75 else 'warn' if summary.i18n_health_score >= 50 else 'bad'}">{summary.i18n_health_score:.1f} / 100</p>
+<p class="score {"good" if summary.i18n_health_score >= 75 else "warn" if summary.i18n_health_score >= 50 else "bad"}">{summary.i18n_health_score:.1f} / 100</p>
 <p>Terminology Maturity: {summary.terminology_maturity:.1f}%</p>
 
 <h2>Encoding</h2>
@@ -761,7 +820,9 @@ def _build_gateway(engine: str | None) -> MTGateway:
     if engine == "libretranslate" or engine is None:
         gw.register(LibreTranslateEngine())
     else:
-        rprint(f"[red]Error:[/red] Unknown engine '{engine}'. Available: libretranslate")
+        rprint(
+            f"[red]Error:[/red] Unknown engine '{engine}'. Available: libretranslate"
+        )
         raise typer.Exit(1)
     return gw
 
@@ -790,7 +851,7 @@ def mt_translate(
         result = gw.translate(text, source_lang, target_lang, glossary=glossary)
     except Exception as exc:
         rprint(f"[red]Translation failed:[/red] {exc}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     finally:
         gw.close()
 
@@ -836,13 +897,13 @@ def mt_batch(
         results = gw.translate_batch(texts, source_lang, target_lang)
     except Exception as exc:
         rprint(f"[red]Batch translation failed:[/red] {exc}")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from None
     finally:
         gw.close()
 
     translations = [
         {"source": src, "translated": res.translated_text, "engine": res.engine}
-        for src, res in zip(texts, results)
+        for src, res in zip(texts, results, strict=True)
     ]
 
     out_path = (
@@ -858,9 +919,7 @@ def mt_batch(
     table.add_column("Translation", style="green", max_width=40)
     table.add_column("Engine")
     for item in translations:
-        table.add_row(
-            item["source"][:40], item["translation"][:40], item["engine"]
-        )
+        table.add_row(item["source"][:40], item["translation"][:40], item["engine"])
     rprint(table)
 
 
@@ -878,7 +937,9 @@ def mt_usage() -> None:
 def trace_sync_gherkin(
     features: str = typer.Argument(..., help="Path to features directory"),
     base: str = typer.Option("en", "--base", help="Base language (BCP 47)"),
-    compare: str = typer.Option(..., "--compare", help="Comma-separated compare languages"),
+    compare: str = typer.Option(
+        ..., "--compare", help="Comma-separated compare languages"
+    ),
 ) -> None:
     """Check Gherkin feature files for cross-language synchronization issues."""
     features_dir = Path(features)
@@ -896,7 +957,9 @@ def trace_sync_gherkin(
 
         rprint(f"[yellow]Found {len(issues)} sync issue(s)[/yellow]:\n")
         for issue in issues:
-            color = {"error": "red", "warning": "yellow", "info": "blue"}.get(issue.severity, "white")
+            color = {"error": "red", "warning": "yellow", "info": "blue"}.get(
+                issue.severity, "white"
+            )
             rprint(
                 f"  [{color}]{issue.severity.upper()}[/{color}] "
                 f"[{color}]{issue.issue_type}[/{color}]: "
@@ -917,7 +980,9 @@ def trace_sync_gherkin(
 @trace_app.command("unece-check")
 def trace_unece_check(
     manifest: str = typer.Argument(..., help="Path to HMI manifest JSON file"),
-    regulation: str = typer.Option("R121", "--regulation", help="Regulation to check (R121)"),
+    regulation: str = typer.Option(
+        "R121", "--regulation", help="Regulation to check (R121)"
+    ),
 ) -> None:
     """Check HMI manifest against UNECE R121 requirements."""
     manifest_path = Path(manifest)
@@ -935,7 +1000,9 @@ def trace_unece_check(
             rprint(f"[green]No compliance issues found[/green] for {regulation}")
             return
 
-        rprint(f"[yellow]Found {len(issues)} compliance issue(s)[/yellow] for {regulation}:\n")
+        rprint(
+            f"[yellow]Found {len(issues)} compliance issue(s)[/yellow] for {regulation}:\n"
+        )
 
         table = Table(title=f"UNECE {regulation} Compliance Issues")
         table.add_column("Severity", style="red")
@@ -944,11 +1011,21 @@ def trace_unece_check(
         table.add_column("Details")
 
         for issue in issues:
-            table.add_row(issue.severity.upper(), issue.check_type, issue.item_id or "-", issue.details)
+            table.add_row(
+                issue.severity.upper(),
+                issue.check_type,
+                issue.item_id or "-",
+                issue.details,
+            )
         rprint(table)
 
     json_data = [
-        {"severity": i.severity, "check_type": i.check_type, "item_id": i.item_id, "details": i.details}
+        {
+            "severity": i.severity,
+            "check_type": i.check_type,
+            "item_id": i.item_id,
+            "details": i.details,
+        }
         for i in issues
     ]
     _output(json_data, _print_table)
@@ -961,7 +1038,9 @@ def trace_unece_check(
 @trace_app.command("aspice-evidence")
 def trace_aspice_evidence(
     project: str = typer.Argument(..., help="Path to project directory"),
-    output: str | None = typer.Option(None, "--output", "-o", help="Output JSON file path"),
+    output: str | None = typer.Option(
+        None, "--output", "-o", help="Output JSON file path"
+    ),
 ) -> None:
     """Scan project directory for ASPICE language-related evidence."""
     project_dir = Path(project)
@@ -984,7 +1063,9 @@ def trace_aspice_evidence(
             for e in evidence
         ]
         out_path = Path(output)
-        out_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        out_path.write_text(
+            json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         rprint(f"[green]Written[/green] {len(evidence)} evidence items to {out_path}")
     else:
         table = Table(title="ASPICE Evidence")
@@ -994,9 +1075,11 @@ def trace_aspice_evidence(
         table.add_column("Description")
 
         for e in evidence:
-            status_color = {"found": "green", "missing": "red", "partial": "yellow"}.get(
-                e.status, "white"
-            )
+            status_color = {
+                "found": "green",
+                "missing": "red",
+                "partial": "yellow",
+            }.get(e.status, "white")
             table.add_row(
                 f"{e.process_id} ({e.process_name})",
                 e.evidence_type,
@@ -1022,10 +1105,16 @@ def config_show() -> None:
     table.add_row("default_target_langs", ", ".join(cfg.default_target_langs))
     table.add_row("glossary_path", cfg.glossary_path or "(none)")
     table.add_row("mt_engine", cfg.mt_engine)
-    table.add_row("mt_engines_config", json.dumps(cfg.mt_engines_config) if cfg.mt_engines_config else "(empty)")
+    table.add_row(
+        "mt_engines_config",
+        json.dumps(cfg.mt_engines_config) if cfg.mt_engines_config else "(empty)",
+    )
     table.add_row("encoding_require_utf8", str(cfg.encoding_require_utf8))
     table.add_row("encoding_fail_on_bom", str(cfg.encoding_fail_on_bom))
-    table.add_row("encoding_exclude", ", ".join(cfg.encoding_exclude) if cfg.encoding_exclude else "(none)")
+    table.add_row(
+        "encoding_exclude",
+        ", ".join(cfg.encoding_exclude) if cfg.encoding_exclude else "(none)",
+    )
     table.add_row("defect_min_score", str(cfg.defect_min_score))
     table.add_row("terminology_min_frequency", str(cfg.terminology_min_frequency))
     table.add_row("trace_similarity_threshold", str(cfg.trace_similarity_threshold))

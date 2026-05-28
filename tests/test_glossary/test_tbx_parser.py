@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from polydrive.core.models import TermCategory
-from polydrive.glossary.tbx_parser import parse_tbx, write_tbx
+from polydrive.glossary.tbx_parser import parse_tbx
+from polydrive.glossary.tbx_parser import write_tbx
 
 FIXTURES_DIR = Path(__file__).parent.parent / "fixtures"
 SAMPLE_TBX = FIXTURES_DIR / "automotive_sample.tbx"
@@ -84,12 +83,12 @@ class TestWriteTbx:
         roundtripped = parse_tbx(out_path)
 
         assert len(roundtripped.entries) == len(original.entries)
-        for orig, rt in zip(original.entries, roundtripped.entries):
+        for orig, rt in zip(original.entries, roundtripped.entries, strict=True):
             assert orig.id == rt.id
             assert orig.category == rt.category
             assert orig.subject == rt.subject
             assert len(orig.translations) == len(rt.translations)
-            for o_t, r_t in zip(orig.translations, rt.translations):
+            for o_t, r_t in zip(orig.translations, rt.translations, strict=True):
                 assert o_t.term == r_t.term
                 assert o_t.lang == r_t.lang
 

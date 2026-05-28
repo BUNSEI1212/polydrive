@@ -128,7 +128,9 @@ def analyze_text_quality(title: str, description: str) -> TextQualityResult:
     # Check for technical specificity
     has_technical_terms = bool(re.search(r"\b[A-Z]{2,}\b", text))  # acronyms
     has_version_info = bool(re.search(r"\bv?\d+\.\d+", text))  # version numbers
-    has_steps = bool(re.search(r"\b(step|first|then|next|after)\b", text, re.IGNORECASE))
+    has_steps = bool(
+        re.search(r"\b(step|first|then|next|after)\b", text, re.IGNORECASE)
+    )
 
     if not has_technical_terms and len(text) > 50:
         issues.append("No technical terms or acronyms detected")
