@@ -251,6 +251,61 @@ def glossary_list(
     rprint(table)
 
 
+@glossary_app.command("extract")
+def glossary_extract(
+    path: str = typer.Argument(..., help="Path to source files or a single text file"),
+    min_frequency: int = typer.Option(2, "--min-frequency", "-n", help="Minimum term frequency"),
+    max_terms: int = typer.Option(50, "--max", help="Maximum terms to extract"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Output file path (JSON)"),
+) -> None:
+    """Extract candidate terminology from requirements or specification documents."""
+    from polydrive.glossary.extractor import extract_terms
+
+    target = Path(path)
+    texts: list[str] = []
+
+    if target.is_file():
+        texts.append(target.read_text(encoding="utf-8", errors="replace"))
+    elif target.is_dir():
+        for ext in ("*.txt", "*.md", "*.rst", "*.feature"):
+            for fp in target.rglob(ext):
+                texts.append(fp.read_text(encoding="utf-8", errors="replace"))
+    else:
+        rprint(f"[red]Error:[/red] Path not found: {path}")
+        raise typer.Exit(1)
+
+    if not texts:
+        rprint("[yellow]No text files found to extract from[/yellow]")
+        return
+
+    candidates = extract_terms(texts, min_frequency=min_frequency, max_terms=max_terms)
+
+    if not candidates:
+        rprint("[yellow]No candidate terms found[/yellow]")
+        return
+
+    table = Table(title=f"Candidate Terms (from {len(texts)} file(s))")
+    table.add_column("Term", style="green")
+    table.add_column("Score", justify="right")
+    table.add_column("Freq", justify="right")
+    table.add_column("Source", style="cyan")
+
+    for ct in candidates:
+        table.add_row(ct.term, f"{ct.score:.4f}", str(ct.frequency), ct.source)
+
+    rprint(table)
+
+    if output:
+        import json as _json
+
+        data = [
+            {"term": ct.term, "score": ct.score, "frequency": ct.frequency, "source": ct.source}
+            for ct in candidates
+        ]
+        Path(output).write_text(_json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        rprint(f"\n[green]Exported[/green] {len(candidates)} candidates to {output}")
+
+
 # ── i18n commands ──────────────────────────────────────────────────
 
 

@@ -55,6 +55,14 @@ class DefectAnalyzer:
 
         suggestions = self._suggestions(report, missing)
 
+        # Add NLP-based suggestions
+        from polydrive.defect_guard.nlp_quality import analyze_text_quality
+
+        nlp_result = analyze_text_quality(report.title, report.description)
+        for nlp_issue in nlp_result.issues:
+            if nlp_issue not in suggestions:
+                suggestions.append(nlp_issue)
+
         if composite < 40:
             sev = "error"
         elif composite < 70:
@@ -93,30 +101,35 @@ class DefectAnalyzer:
         return score, missing
 
     def _text_quality(self, report: DefectReport) -> float:
+        from polydrive.defect_guard.nlp_quality import analyze_text_quality
+
+        nlp_result = analyze_text_quality(report.title, report.description)
+
+        # Blend rule-based scoring with NLP scoring
         points = 0.0
         max_points = 4.0
 
-        # Title quality: starts with action verb or is descriptive
         first_word = report.title.strip().split()[0].lower().rstrip(":") if report.title.strip() else ""
         if first_word in _ACTION_VERBS or len(report.title.strip()) > 20:
             points += 1.0
 
-        # Steps are numbered or structured
         if report.steps_to_reproduce:
             numbered = sum(1 for s in report.steps_to_reproduce if _NUMBERED_STEP.match(s))
             if numbered >= len(report.steps_to_reproduce) * 0.5:
                 points += 1.0
 
-        # Has specific details (version numbers, error codes)
         all_text = f"{report.title} {report.description} {' '.join(report.steps_to_reproduce)}"
         if _SPECIFIC_PATTERN.search(all_text):
             points += 1.0
 
-        # Description not too short
         if len(report.description.strip()) > 50:
             points += 1.0
 
-        return (points / max_points) * 100.0
+        rule_score = (points / max_points) * 100.0
+
+        # Weighted blend: 60% rules + 40% NLP
+        blended = rule_score * 0.6 + nlp_result.score * 0.4
+        return blended
 
     def _reproducibility(self, report: DefectReport) -> float:
         points = 0.0

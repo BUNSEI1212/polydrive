@@ -186,8 +186,9 @@ def _build_scenario_map(
     """Build a mapping from base scenario names to compare scenarios.
 
     Strategy 1: exact name match (works when both files use the same names).
-    Strategy 2: position-based fallback — match the Nth scenario in base to
-    the Nth scenario in compare, which handles translated scenario names.
+    Strategy 2: semantic similarity via sentence-transformers (handles
+      translated names like "登录成功" ↔ "Successful login").
+    Strategy 3: position-based fallback when no model available.
     """
     by_name: dict[str, GherkinScenario] = {s.name: s for s in compare_scenarios}
     matched: dict[str, GherkinScenario] = {}
@@ -197,13 +198,23 @@ def _build_scenario_map(
         if bs.name in by_name:
             matched[bs.name] = by_name[bs.name]
 
-    # Phase 2: position-based fallback for unmatched base scenarios
+    if len(matched) == len(base_scenarios):
+        return matched
+
+    # Phase 2: semantic matching for unmatched scenarios
     used_compare_names = {cs.name for cs in matched.values()}
     unmatched_base = [s for s in base_scenarios if s.name not in matched]
     unmatched_compare = [s for s in compare_scenarios if s.name not in used_compare_names]
 
-    for bs, cs in zip(unmatched_base, unmatched_compare):
-        matched[bs.name] = cs
+    if unmatched_base and unmatched_compare:
+        from polydrive.trace.semantic import match_scenarios
+
+        base_names = [s.name for s in unmatched_base]
+        comp_names = [s.name for s in unmatched_compare]
+        comp_by_name = {s.name: s for s in unmatched_compare}
+
+        for sm in match_scenarios(base_names, comp_names):
+            matched[sm.base_name] = comp_by_name[sm.compare_name]
 
     return matched
 
