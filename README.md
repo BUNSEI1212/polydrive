@@ -1,5 +1,7 @@
 # PolyDrive
 
+**[English](README.md)** | [中文](README.zh-CN.md) | [日本語](README.ja.md)
+
 > Language governance toolkit for multinational automotive testing teams.
 
 PolyDrive makes language-related friction **visible, measurable, and actionable** in your testing workflow. It's a CLI-first toolkit for terminology consistency, defect quality, i18n guarding, translation orchestration, and compliance traceability.
