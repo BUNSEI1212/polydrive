@@ -34,3 +34,34 @@ def test_i18n_help() -> None:
     assert "detect-hardcoded" in result.stdout
     assert "pseudo-localize" in result.stdout
     assert "validate-qt" in result.stdout
+
+
+def test_serve_help() -> None:
+    result = runner.invoke(app, ["serve", "--help"])
+    assert result.exit_code == 0
+    assert "REST API" in result.stdout
+    assert "--port" in result.stdout
+
+
+def test_defect_help() -> None:
+    result = runner.invoke(app, ["defect", "--help"])
+    assert result.exit_code == 0
+    assert "analyze" in result.stdout
+
+
+def test_glossary_help_detailed() -> None:
+    result = runner.invoke(app, ["glossary", "import", "--help"])
+    assert result.exit_code == 0
+    assert "--format" in result.stdout or "format" in result.stdout
+
+
+def test_mt_help() -> None:
+    result = runner.invoke(app, ["mt", "--help"])
+    assert result.exit_code == 0
+    assert "translate" in result.stdout
+
+
+def test_trace_help() -> None:
+    result = runner.invoke(app, ["trace", "--help"])
+    assert result.exit_code == 0
+    assert "sync-gherkin" in result.stdout
