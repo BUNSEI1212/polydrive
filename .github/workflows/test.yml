@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   test:
@@ -26,13 +27,26 @@ jobs:
       - run: uv sync --group tests
       - run: uv run python -c "import polydrive; print(polydrive.__version__)"
       - run: set -o pipefail; uv run pytest -v --tb=long 2>&1 | tee pytest-output.txt
-      - name: Write failure summary
+      - name: Create issue with failure details
         if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "## Test Failure Output" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat pytest-output.txt >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## CI Test Failure"
+            echo ""
+            echo "**Commit:** ${{ github.sha }}"
+            echo "**Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo ""
+            echo "### Full pytest output"
+            echo ""
+            echo '```'
+            cat pytest-output.txt
+            echo '```'
+          } > /tmp/issue-body.md
+          gh issue create \
+            --title "CI test failure: ${{ github.sha }}" \
+            --body-file /tmp/issue-body.md || true
 
   lint:
     runs-on: ubuntu-latest
