@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   test:
@@ -26,53 +25,7 @@ jobs:
       - uses: astral-sh/setup-uv@v4
       - run: uv sync --group tests
       - run: uv run python -c "import polydrive; print(polydrive.__version__)"
-      - name: Run pytest
-        id: pytest
-        run: |
-          uv run pytest -v --tb=long 2>&1 | tee pytest-output.txt
-        continue-on-error: true
-      - name: Create issue on failure
-        if: steps.pytest.outcome == 'failure'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          OUTPUT=$(tail -200 pytest-output.txt)
-          gh issue create \
-            --title "CI test failure on ${GITHUB_SHA:0:7}" \
-            --body "## Test Failure
-
-          Commit: ${GITHUB_SHA:0:7}
-          OS: ${{ matrix.os }}
-          Python: ${{ matrix.python-version }}
-
-          \`\`\`
-          $OUTPUT
-          \`\`\`" \
-            --label "ci-failure" || true
-
-  full-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - uses: astral-sh/setup-uv@v4
-      - run: uv sync --group tests
-      - run: uv run python -c "import polydrive; print(polydrive.__version__)"
-      - name: Import debug
-        run: |
-          uv run python -c "
-          import sys; print(f'Python: {sys.version}')
-          import polydrive; print(f'polydrive: {polydrive.__version__}')
-          print('Importing cli...')
-          from polydrive.cli import app; print('cli OK')
-          print('Importing api...')
-          from polydrive.api import app as api_app; print('api OK')
-          print('Importing all test modules...')
-          "
-      - name: Run tests
-        run: uv run pytest -v --tb=long
+      - run: uv run pytest -v --tb=long
 
   lint:
     runs-on: ubuntu-latest
