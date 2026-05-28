@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tbx type="TBX-Basic" style="dca" xml:lang="en" xmlns="urn:iso:std:iso:30042:ed-2">
+  <tbxHeader>
+    <fileDesc>
+      <titleStmt><title>Automotive Terminology Sample</title></titleStmt>
+      <sourceDesc><p>PolyDrive Test Fixture</p></sourceDesc>
+    </fileDesc>
+  </tbxHeader>
+  <text>
+    <body>
+      <conceptEntry id="c1">
+        <langSec xml:lang="en">
+          <termSec>
+            <term>brake</term>
+            <termNote type="partOfSpeech">noun</termNote>
+          </termSec>
+          <descripSec type="definition">A device for slowing or stopping a moving vehicle</descripSec>
+        </langSec>
+        <langSec xml:lang="zh">
+          <termSec>
+            <term>制动器</term>
+          </termSec>
+        </langSec>
+        <descripSec type="subjectField">braking system</descripSec>
+        <adminSec>
+          <adminNote type="termCategory">technical</adminNote>
+        </adminSec>
+      </conceptEntry>
+
+      <conceptEntry id="c2">
+        <langSec xml:lang="en">
+          <termSec>
+            <term>steering wheel</term>
+            <termNote type="partOfSpeech">noun</termNote>
+          </termSec>
+          <descripSec type="definition">A wheel that the driver rotates to control the direction of a vehicle</descripSec>
+        </langSec>
+        <langSec xml:lang="zh">
+          <termSec>
+            <term>方向盘</term>
+          </termSec>
+        </langSec>
+        <descripSec type="subjectField">steering system</descripSec>
+        <adminSec>
+          <adminNote type="termCategory">technical</adminNote>
+        </adminSec>
+      </conceptEntry>
+
+      <conceptEntry id="c3">
+        <langSec xml:lang="en">
+          <termSec>
+            <term>airbag</term>
+            <termNote type="partOfSpeech">noun</termNote>
+          </termSec>
+          <descripSec type="definition">A vehicle occupant restraint system that inflates upon collision</descripSec>
+        </langSec>
+        <langSec xml:lang="zh">
+          <termSec>
+            <term>安全气囊</term>
+          </termSec>
+        </langSec>
+        <descripSec type="subjectField">safety system</descripSec>
+        <adminSec>
+          <adminNote type="termCategory">technical</adminNote>
+        </adminSec>
+      </conceptEntry>
+
+      <conceptEntry id="c4">
+        <langSec xml:lang="en">
+          <termSec>
+            <term>torque</term>
+            <termNote type="partOfSpeech">noun</termNote>
+          </termSec>
+          <descripSec type="definition">A measure of the rotational force applied to an object</descripSec>
+        </langSec>
+        <langSec xml:lang="zh">
+          <termSec>
+            <term>扭矩</term>
+          </termSec>
+        </langSec>
+        <descripSec type="subjectField">powertrain</descripSec>
+        <adminSec>
+          <adminNote type="termCategory">technical</adminNote>
+        </adminSec>
+      </conceptEntry>
+
+      <conceptEntry id="c5">
+        <langSec xml:lang="en">
+          <termSec>
+            <term>ABS</term>
+            <termNote type="partOfSpeech">noun</termNote>
+          </termSec>
+          <descripSec type="definition">Anti-lock Braking System — prevents wheels from locking during braking</descripSec>
+        </langSec>
+        <langSec xml:lang="zh">
+          <termSec>
+            <term>防抱死制动系统</term>
+          </termSec>
+        </langSec>
+        <descripSec type="subjectField">braking system</descripSec>
+        <adminSec>
+          <adminNote type="termCategory">technical</adminNote>
+        </adminSec>
+      </conceptEntry>
+
+      <conceptEntry id="c6">
+        <langSec xml:lang="en">
+          <termSec>
+            <term>Euro NCAP</term>
+          </termSec>
+          <descripSec type="definition">European New Car Assessment Programme — vehicle safety rating organization</descripSec>
+        </langSec>
+        <langSec xml:lang="zh">
+          <termSec>
+            <term>Euro NCAP</term>
+          </termSec>
+        </langSec>
+        <descripSec type="subjectField">regulatory</descripSec>
+        <adminSec>
+          <adminNote type="termCategory">do_not_translate</adminNote>
+        </adminSec>
+      </conceptEntry>
+    </body>
+  </text>
+</tbx>

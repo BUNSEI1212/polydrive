@@ -1,0 +1,16 @@
+{
+  "app": {
+    "title": "My Application",
+    "greeting": "Hello, {{name}}!",
+    "farewell": "Goodbye!"
+  },
+  "errors": {
+    "not_found": "Page not found",
+    "server_error": "Internal server error"
+  },
+  "menu": {
+    "file": "File",
+    "edit": "Edit",
+    "help": "Help"
+  }
+}
