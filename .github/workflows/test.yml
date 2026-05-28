@@ -6,9 +6,7 @@ on:
   pull_request:
     types: [opened, synchronize]
 
-permissions:
-  contents: read
-  checks: write
+permissions: {}
 
 jobs:
   test:
@@ -26,24 +24,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: astral-sh/setup-uv@v4
-      - run: uv sync --group tests --frozen
+      - run: uv sync --group tests
       - run: uv run python -c "import polydrive; print(polydrive.__version__)"
-      - name: Run tests
-        shell: bash
-        run: |
-          uv run pytest -v --tb=long --junitxml=test-results.xml 2>&1 | tee test-output.txt
-          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          # Show last 100 lines of output in summary
-          tail -100 test-output.txt >> $GITHUB_STEP_SUMMARY || true
-          echo '```' >> $GITHUB_STEP_SUMMARY
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
-          path: |
-            test-output.txt
-            test-results.xml
+      - run: uv run pytest -v --tb=long
       - uses: codecov/codecov-action@v4
         if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
 
@@ -52,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v4
-      - run: uv sync --group lint --frozen
+      - run: uv sync --group lint
       - run: uv run ruff check .
       - run: uv run ruff format --check .
 
