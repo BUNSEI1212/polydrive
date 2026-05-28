@@ -6,10 +6,70 @@ on:
   pull_request:
     types: [opened, synchronize]
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v4
+      - run: uv sync --group tests
+      - name: Debug imports
+        run: |
+          uv run python -c "
+          print('Step 1: import polydrive')
+          import polydrive
+          print(f'  version: {polydrive.__version__}')
+
+          print('Step 2: import polydrive.cli')
+          from polydrive.cli import app
+          print('  OK')
+
+          print('Step 3: import polydrive.core.models')
+          from polydrive.core.models import DefectReport
+          print('  OK')
+
+          print('Step 4: import polydrive.glossary')
+          from polydrive.glossary import import_csv, parse_tbx
+          print('  OK')
+
+          print('Step 5: import polydrive.i18n_guard')
+          from polydrive.i18n_guard import check_encoding, detect_hardcoded, pseudo_localize
+          print('  OK')
+
+          print('Step 6: import polydrive.defect_guard')
+          from polydrive.defect_guard import DefectAnalyzer
+          print('  OK')
+
+          print('Step 7: import polydrive.mt_gateway')
+          from polydrive.mt_gateway import MTGateway
+          print('  OK')
+
+          print('Step 8: import polydrive.trace')
+          from polydrive.trace import sync_features, check_unece_r121, collect_aspice_evidence
+          print('  OK')
+
+          print('Step 9: import polydrive.metrics')
+          from polydrive.metrics.collector import MetricsCollector
+          print('  OK')
+
+          print('Step 10: import polydrive.api')
+          from polydrive.api import app
+          print('  OK')
+
+          print('All imports successful!')
+          "
+      - name: Run pytest with debug
+        run: |
+          uv run python -m pytest -v --tb=long --no-header 2>&1 || true
+
   test:
+    needs: debug
     strategy:
       fail-fast: false
       matrix:
