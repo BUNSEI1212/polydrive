@@ -1,10 +1,16 @@
 """Tests for the PolyDrive CLI."""
 
+import re
+
 from typer.testing import CliRunner
 
 from polydrive.cli import app
 
 runner = CliRunner()
+
+
+def _strip_ansi(text: str) -> str:
+    return re.sub(r"\x1b\[[0-9;]*m", "", text)
 
 
 def test_version() -> None:
@@ -38,9 +44,10 @@ def test_i18n_help() -> None:
 
 def test_serve_help() -> None:
     result = runner.invoke(app, ["serve", "--help"])
+    output = _strip_ansi(result.stdout)
     assert result.exit_code == 0
-    assert "REST API" in result.stdout
-    assert "--port" in result.stdout
+    assert "REST API" in output
+    assert "--port" in output
 
 
 def test_defect_help() -> None:
@@ -51,8 +58,9 @@ def test_defect_help() -> None:
 
 def test_glossary_help_detailed() -> None:
     result = runner.invoke(app, ["glossary", "import", "--help"])
+    output = _strip_ansi(result.stdout)
     assert result.exit_code == 0
-    assert "--format" in result.stdout or "format" in result.stdout
+    assert "--format" in output or "format" in output
 
 
 def test_mt_help() -> None:
