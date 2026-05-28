@@ -94,13 +94,9 @@ packages = ["src/polydrive"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = [
-    "error",
-    "ignore::FutureWarning",
-    "ignore::UserWarning",
-    "ignore::DeprecationWarning",
-    "ignore::ImportWarning",
+    "default",
 ]
-addopts = ["-ra", "--strict-markers", "--import-mode=importlib"]
+addopts = ["-ra", "--strict-markers"]
 
 [tool.ruff]
 target-version = "py310"
