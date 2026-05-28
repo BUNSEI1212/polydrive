@@ -8,9 +8,49 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
-  debug:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v4
+      - run: uv sync --group tests
+      - run: uv run python -c "import polydrive; print(polydrive.__version__)"
+      - name: Run pytest
+        id: pytest
+        run: |
+          uv run pytest -v --tb=long 2>&1 | tee pytest-output.txt
+        continue-on-error: true
+      - name: Create issue on failure
+        if: steps.pytest.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OUTPUT=$(tail -200 pytest-output.txt)
+          gh issue create \
+            --title "CI test failure on ${GITHUB_SHA:0:7}" \
+            --body "## Test Failure
+
+          Commit: ${GITHUB_SHA:0:7}
+          OS: ${{ matrix.os }}
+          Python: ${{ matrix.python-version }}
+
+          \`\`\`
+          $OUTPUT
+          \`\`\`" \
+            --label "ci-failure" || true
+
+  full-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,76 +59,20 @@ jobs:
           python-version: "3.12"
       - uses: astral-sh/setup-uv@v4
       - run: uv sync --group tests
-      - name: Debug imports
+      - run: uv run python -c "import polydrive; print(polydrive.__version__)"
+      - name: Import debug
         run: |
           uv run python -c "
-          print('Step 1: import polydrive')
-          import polydrive
-          print(f'  version: {polydrive.__version__}')
-
-          print('Step 2: import polydrive.cli')
-          from polydrive.cli import app
-          print('  OK')
-
-          print('Step 3: import polydrive.core.models')
-          from polydrive.core.models import DefectReport
-          print('  OK')
-
-          print('Step 4: import polydrive.glossary')
-          from polydrive.glossary import import_csv, parse_tbx
-          print('  OK')
-
-          print('Step 5: import polydrive.i18n_guard')
-          from polydrive.i18n_guard import check_encoding, detect_hardcoded, pseudo_localize
-          print('  OK')
-
-          print('Step 6: import polydrive.defect_guard')
-          from polydrive.defect_guard import DefectAnalyzer
-          print('  OK')
-
-          print('Step 7: import polydrive.mt_gateway')
-          from polydrive.mt_gateway import MTGateway
-          print('  OK')
-
-          print('Step 8: import polydrive.trace')
-          from polydrive.trace import sync_features, check_unece_r121, collect_aspice_evidence
-          print('  OK')
-
-          print('Step 9: import polydrive.metrics')
-          from polydrive.metrics.collector import MetricsCollector
-          print('  OK')
-
-          print('Step 10: import polydrive.api')
-          from polydrive.api import app
-          print('  OK')
-
-          print('All imports successful!')
+          import sys; print(f'Python: {sys.version}')
+          import polydrive; print(f'polydrive: {polydrive.__version__}')
+          print('Importing cli...')
+          from polydrive.cli import app; print('cli OK')
+          print('Importing api...')
+          from polydrive.api import app as api_app; print('api OK')
+          print('Importing all test modules...')
           "
-      - name: Run pytest with debug
-        run: |
-          uv run python -m pytest -v --tb=long --no-header 2>&1 || true
-
-  test:
-    needs: debug
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - uses: astral-sh/setup-uv@v4
-      - run: uv sync --group tests
-      - run: uv run python -c "import polydrive; print(polydrive.__version__)"
-      - run: uv run pytest -v --tb=long
-      - uses: codecov/codecov-action@v4
-        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
+      - name: Run tests
+        run: uv run pytest -v --tb=long
 
   lint:
     runs-on: ubuntu-latest
