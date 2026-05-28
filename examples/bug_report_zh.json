@@ -12,8 +12,8 @@
     "执行3次标准制动循环（减速度0.3g）",
     "观察第3次制动后系统状态"
   ],
-  "expected_result": "系统应持续执行能量回收，仪表盘显示回收功率",
-  "actual_result": "第3次制动后能量回收停止，显示故障码BREC-0x3F",
+  "expected_behavior": "系统应持续执行能量回收，仪表盘显示回收功率",
+  "actual_behavior": "第3次制动后能量回收停止，显示故障码BREC-0x3F",
   "attachments": ["log_brec_20240115.txt"],
   "reporter": "张伟",
   "language": "zh",

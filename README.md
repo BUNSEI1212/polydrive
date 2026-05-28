@@ -54,8 +54,8 @@ polydrive i18n detect-hardcoded examples/cpp_project/ --lang cpp
 # Import a TBX glossary
 polydrive glossary import examples/automotive_terms.csv
 
-# Check terminology consistency
-polydrive glossary check examples/automotive_terms.csv --lang-pair en:zh
+# Check terminology consistency (requires TBX format)
+# polydrive glossary check terms.tbx --lang-pair en:zh
 
 # Generate pseudo-localized resources
 polydrive i18n pseudo-localize examples/locales/en.json --mode expand+cjk

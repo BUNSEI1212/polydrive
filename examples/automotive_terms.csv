@@ -1,12 +1,34 @@
-en,zh,de,ja,category,note
-brake energy recovery,制动能量回收,Bremsenergierückgewinnung,ブレーキエネルギー回生,technical,
-ADAS,高级驾驶辅助系统,Assistenzsysteme,先進運転支援システム,technical,Abbreviation — do not translate
-ECU,电子控制单元,Steuergerät,ECU,technical,Abbreviation — keep as ECU in all languages
-CAN bus,CAN总线,CAN-Bus,CANバス,technical,
-torque vectoring,扭矩矢量分配, torque vectoring should NOT be translated as 扭矩引导
-tell-tale,指示灯,Kontrollleuchte,インジケーター,regulatory,UNECE R121 term
-HMI,人机界面,Mensch-Maschine-Schnittstelle,HMI,technical,Abbreviation
-SOC,荷电状态,Ladezustand,充電状態,technical,State of Charge
-OTA,空中升级,OTA-Update,OTAアップデート,technical,Over-the-Air
-fault code,故障码,Fehlercode,フォールトコード,technical,
-reproduction steps,复现步骤,Reproduktionsschritte,再現手順,technical,
+id,source_term,source_lang,target_term,target_lang,category,definition,note
+brake_energy_recovery,brake energy recovery,en,制动能量回收,zh,technical,Regenerative braking system,
+brake_energy_recovery,brake energy recovery,en,Bremsenergierückgewinnung,de,technical,Regenerative braking system,
+brake_energy_recovery,brake energy recovery,en,ブレーキエネルギー回生,ja,technical,Regenerative braking system,
+adas,ADAS,en,高级驾驶辅助系统,zh,technical,Advanced Driver Assistance System,Abbreviation — do not translate
+adas,ADAS,en,Assistenzsysteme,de,technical,Advanced Driver Assistance System,Abbreviation — do not translate
+adas,ADAS,en,先進運転支援システム,ja,technical,Advanced Driver Assistance System,Abbreviation — do not translate
+ecu,ECU,en,电子控制单元,zh,technical,Electronic Control Unit,Abbreviation — keep as ECU in all languages
+ecu,ECU,en,Steuergerät,de,technical,Electronic Control Unit,Abbreviation — keep as ECU in all languages
+ecu,ECU,en,ECU,ja,technical,Electronic Control Unit,Abbreviation — keep as ECU in all languages
+can_bus,CAN bus,en,CAN总线,zh,technical,Controller Area Network bus,
+can_bus,CAN bus,en,CAN-Bus,de,technical,Controller Area Network bus,
+can_bus,CAN bus,en,CANバス,ja,technical,Controller Area Network bus,
+torque_vectoring,torque vectoring,en,扭矩矢量分配,zh,technical,Torque distribution to individual wheels,
+torque_vectoring,torque vectoring,en,Drehmomentverteilung,de,technical,Torque distribution to individual wheels,
+torque_vectoring,torque vectoring,en,トルクベクタリング,ja,technical,Torque distribution to individual wheels,
+tell_tale,tell-tale,en,指示灯,zh,regulatory,Warning indicator on instrument cluster,UNECE R121 term
+tell_tale,tell-tale,en,Kontrollleuchte,de,regulatory,Warning indicator on instrument cluster,UNECE R121 term
+tell_tale,tell-tale,en,インジケーター,ja,regulatory,Warning indicator on instrument cluster,UNECE R121 term
+hmi,HMI,en,人机界面,zh,technical,Human-Machine Interface,Abbreviation
+hmi,HMI,en,Mensch-Maschine-Schnittstelle,de,technical,Human-Machine Interface,Abbreviation
+hmi,HMI,en,HMI,ja,technical,Human-Machine Interface,Abbreviation
+soc,SOC,en,荷电状态,zh,technical,State of Charge,
+soc,SOC,en,Ladezustand,de,technical,State of Charge,
+soc,SOC,en,充電状態,ja,technical,State of Charge,
+ota,OTA,en,空中升级,zh,technical,Over-the-Air update,
+ota,OTA,en,OTA-Update,de,technical,Over-the-Air update,
+ota,OTA,en,OTAアップデート,ja,technical,Over-the-Air update,
+fault_code,fault code,en,故障码,zh,technical,Diagnostic trouble code,
+fault_code,fault code,en,Fehlercode,de,technical,Diagnostic trouble code,
+fault_code,fault code,en,フォールトコード,ja,technical,Diagnostic trouble code,
+repro_steps,reproduction steps,en,复现步骤,zh,technical,Steps to reproduce a defect,
+repro_steps,reproduction steps,en,Reproduktionsschritte,de,technical,Steps to reproduce a defect,
+repro_steps,reproduction steps,en,再現手順,ja,technical,Steps to reproduce a defect,

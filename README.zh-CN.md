@@ -54,8 +54,8 @@ polydrive i18n detect-hardcoded examples/cpp_project/ --lang cpp
 # 导入 TBX 术语表
 polydrive glossary import examples/automotive_terms.csv
 
-# 检查术语一致性（英语-中文）
-polydrive glossary check examples/automotive_terms.csv --lang-pair en:zh
+# 检查术语一致性（需要 TBX 格式）
+# polydrive glossary check terms.tbx --lang-pair en:zh
 
 # 生成伪本地化资源
 polydrive i18n pseudo-localize examples/locales/en.json --mode expand+cjk
