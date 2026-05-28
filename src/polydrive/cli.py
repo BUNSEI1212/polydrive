@@ -13,26 +13,6 @@ from rich.console import Console
 from rich.table import Table
 
 from polydrive import __version__
-from polydrive.core.config import PolyDriveConfig
-from polydrive.core.config import load_config
-from polydrive.core.config import save_config
-from polydrive.core.models import LangPair
-from polydrive.defect_guard import DefectAnalyzer
-from polydrive.defect_guard.template import load_template
-from polydrive.defect_guard.template import validate_report
-from polydrive.glossary import import_csv
-from polydrive.glossary import parse_tbx
-from polydrive.glossary import write_tbx
-from polydrive.i18n_guard import check_encoding
-from polydrive.i18n_guard import detect_hardcoded
-from polydrive.i18n_guard import pseudo_localize
-from polydrive.metrics.collector import MetricsSummary
-from polydrive.metrics.collector import load_collector_from_json
-from polydrive.mt_gateway import MTGateway
-from polydrive.mt_gateway.engines.libretranslate import LibreTranslateEngine
-from polydrive.trace.aspice import collect_aspice_evidence
-from polydrive.trace.gherkin_sync import sync_features
-from polydrive.trace.unece import check_unece_r121
 
 # Ensure UTF-8 output on Windows to avoid GBK encoding errors with CJK text
 if sys.platform == "win32":
@@ -151,6 +131,9 @@ def glossary_import(
     ),
 ) -> None:
     """Import a terminology glossary from TBX or CSV."""
+    from polydrive.glossary import import_csv
+    from polydrive.glossary import parse_tbx
+
     src_path = Path(source)
     if not src_path.exists():
         rprint(f"[red]Error:[/red] File not found: {source}")
@@ -236,6 +219,9 @@ def glossary_check(
     lang_pair: str = typer.Option("en:zh", help="Language pair to check (e.g. en:zh)"),
 ) -> None:
     """Check terminology consistency in a glossary."""
+    from polydrive.core.models import LangPair
+    from polydrive.glossary import parse_tbx
+
     src_path = Path(source)
     if not src_path.exists():
         rprint(f"[red]Error:[/red] File not found: {source}")
@@ -277,6 +263,9 @@ def glossary_export(
     format: str = typer.Option("tbx", "--format", "-f", help="Output format (tbx)"),
 ) -> None:
     """Export glossary to TBX format."""
+    from polydrive.glossary import parse_tbx
+    from polydrive.glossary import write_tbx
+
     src_path = Path(source)
     out_path = Path(output)
 
@@ -300,6 +289,8 @@ def glossary_list(
     lang: str | None = typer.Option(None, help="Filter by language (BCP 47 tag)"),
 ) -> None:
     """List terms in a glossary."""
+    from polydrive.glossary import parse_tbx
+
     src_path = Path(source)
     if not src_path.exists():
         rprint(f"[red]Error:[/red] File not found: {source}")
@@ -405,6 +396,8 @@ def i18n_check_encoding(
     ),
 ) -> None:
     """Check file encodings and detect issues."""
+    from polydrive.i18n_guard import check_encoding
+
     target = Path(path)
     issues = check_encoding(target, require_utf8=require_utf8, fail_on_bom=fail_on_bom)
 
@@ -447,6 +440,8 @@ def i18n_detect_hardcoded(
     ),
 ) -> None:
     """Detect hardcoded non-ASCII strings in source code."""
+    from polydrive.i18n_guard import detect_hardcoded
+
     target = Path(path)
     issues = detect_hardcoded(target, language=lang, exclude_pattern=exclude)
 
@@ -483,6 +478,8 @@ def i18n_pseudo_localize(
     output: str | None = typer.Option(None, "--output", "-o", help="Output file path"),
 ) -> None:
     """Generate pseudo-localized resources for i18n testing."""
+    from polydrive.i18n_guard import pseudo_localize
+
     src_path = Path(source)
     out_path = Path(output) if output else None
 
@@ -555,6 +552,8 @@ def defect_analyze(
     """Analyze a single defect report for quality."""
     from polydrive.core.models import DefectReport
     from polydrive.core.models import Glossary
+    from polydrive.defect_guard import DefectAnalyzer
+    from polydrive.glossary import parse_tbx
 
     input_path = Path(input)
     if not input_path.exists():
@@ -583,6 +582,7 @@ def defect_batch(
 ) -> None:
     """Batch-analyze multiple defect reports."""
     from polydrive.core.models import DefectReport
+    from polydrive.defect_guard import DefectAnalyzer
 
     input_path = Path(input)
     output_path = Path(output)
@@ -611,6 +611,8 @@ def defect_validate_template(
 ) -> None:
     """Validate a defect report against a YAML template."""
     from polydrive.core.models import DefectReport
+    from polydrive.defect_guard.template import load_template
+    from polydrive.defect_guard.template import validate_report
 
     template_path = Path(template)
     input_path = Path(input)
@@ -644,6 +646,8 @@ def metrics_summary(
     input: str = typer.Option(..., "--input", "-i", help="Path to metrics JSON file"),
 ) -> None:
     """Show metrics summary from a previously exported JSON file."""
+    from polydrive.metrics.collector import load_collector_from_json
+
     in_path = Path(input)
     if not in_path.exists():
         rprint(f"[red]Error:[/red] File not found: {input}")
@@ -708,6 +712,8 @@ def metrics_prometheus(
     input: str = typer.Option(..., "--input", "-i", help="Path to metrics JSON file"),
 ) -> None:
     """Export metrics in Prometheus text exposition format."""
+    from polydrive.metrics.collector import load_collector_from_json
+
     in_path = Path(input)
     if not in_path.exists():
         rprint(f"[red]Error:[/red] File not found: {input}")
@@ -725,6 +731,8 @@ def metrics_report(
     ),
 ) -> None:
     """Generate an HTML report from metrics data."""
+    from polydrive.metrics.collector import load_collector_from_json
+
     in_path = Path(input)
     out_path = Path(output)
 
@@ -740,7 +748,7 @@ def metrics_report(
     rprint(f"[green]Report written to[/green] {out_path}")
 
 
-def _render_html_report(summary: MetricsSummary) -> str:
+def _render_html_report(summary: Any) -> str:
     """Render a simple HTML metrics report."""
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -814,8 +822,11 @@ th {{ background: #3498db; color: white; }}
 # ── MT commands ─────────────────────────────────────────────────────
 
 
-def _build_gateway(engine: str | None) -> MTGateway:
+def _build_gateway(engine: str | None) -> Any:
     """Build an MTGateway with the requested engine."""
+    from polydrive.mt_gateway import MTGateway
+    from polydrive.mt_gateway.engines.libretranslate import LibreTranslateEngine
+
     gw = MTGateway()
     if engine == "libretranslate" or engine is None:
         gw.register(LibreTranslateEngine())
@@ -838,6 +849,8 @@ def mt_translate(
     ),
 ) -> None:
     """Translate text using an MT engine."""
+    from polydrive.glossary import parse_tbx
+
     glossary = None
     if glossary_path:
         gpath = Path(glossary_path)
@@ -942,6 +955,8 @@ def trace_sync_gherkin(
     ),
 ) -> None:
     """Check Gherkin feature files for cross-language synchronization issues."""
+    from polydrive.trace.gherkin_sync import sync_features
+
     features_dir = Path(features)
     if not features_dir.exists():
         rprint(f"[red]Error:[/red] Directory not found: {features}")
@@ -985,6 +1000,8 @@ def trace_unece_check(
     ),
 ) -> None:
     """Check HMI manifest against UNECE R121 requirements."""
+    from polydrive.trace.unece import check_unece_r121
+
     manifest_path = Path(manifest)
     if not manifest_path.exists():
         rprint(f"[red]Error:[/red] File not found: {manifest}")
@@ -1043,6 +1060,8 @@ def trace_aspice_evidence(
     ),
 ) -> None:
     """Scan project directory for ASPICE language-related evidence."""
+    from polydrive.trace.aspice import collect_aspice_evidence
+
     project_dir = Path(project)
     if not project_dir.is_dir():
         rprint(f"[red]Error:[/red] Directory not found: {project}")
@@ -1095,6 +1114,8 @@ def trace_aspice_evidence(
 @config_app.command("show")
 def config_show() -> None:
     """Display current PolyDrive configuration as a Rich table."""
+    from polydrive.core.config import load_config
+
     cfg = load_config()
 
     table = Table(title="PolyDrive Configuration")
@@ -1126,6 +1147,9 @@ def config_show() -> None:
 @config_app.command("init")
 def config_init() -> None:
     """Create a default .polydrive.yaml in the current directory."""
+    from polydrive.core.config import PolyDriveConfig
+    from polydrive.core.config import save_config
+
     dest = Path.cwd() / ".polydrive.yaml"
     if dest.exists():
         rprint(f"[yellow]Config file already exists:[/yellow] {dest}")

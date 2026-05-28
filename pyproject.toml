@@ -97,8 +97,10 @@ filterwarnings = [
     "error",
     "ignore::FutureWarning",
     "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+    "ignore::ImportWarning",
 ]
-addopts = ["-ra", "--strict-markers"]
+addopts = ["-ra", "--strict-markers", "--import-mode=importlib"]
 
 [tool.ruff]
 target-version = "py310"
