@@ -1,5 +1,9 @@
 # PolyDrive
 
+[![CI](https://github.com/BUNSEI1212/polydrive/actions/workflows/test.yml/badge.svg)](https://github.com/BUNSEI1212/polydrive/actions/workflows/test.yml)
+[![License](https://img.shields.io/badge/license-BSL%201.1-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
+
 **[English](README.md)** | [中文](README.zh-CN.md) | 日本語
 
 > 多国籍自動車テストチームのための言語ガバナンスツールキット
@@ -15,7 +19,7 @@ PolyDriveは、テストワークフローにおける言語関連の摩擦を**
 - **CIパイプライン** — エンコーディング問題がゴーストバグ（実在しないバグ）を引き起こす
 - **コンプライアンス** — HMIテキストが地域の言語規制を満たさない
 
-このギャップを解決するオープンソースツールはこれまで存在しませんでした。PolyDriveがその解決策です。
+このギャップを解決するオープンソースツールはこれまで存在しませんでした。PolyDriveがその解決策です。既存のツールは部分的な解決にとどまりますが、自動車テストワークフローに特化して用語管理、欠陥品質、i18nチェック、トレーサビリティを統合的に結びつけるオープンソースツールはほぼ存在しません。
 
 ## 6つのモジュール
 
@@ -33,26 +37,31 @@ PolyDriveは、テストワークフローにおける言語関連の摩擦を**
 ## クイックスタート
 
 ```bash
-# インストール
-pip install polydrive
+# ソースからインストール
+git clone https://github.com/BUNSEI1212/polydrive.git
+cd polydrive
+pip install -e .
+
+# またはPyPIからインストール（公開後）
+# pip install polydrive
 
 # ファイルのエンコーディングをチェック
-polydrive i18n check-encoding src/ --require-utf8
+polydrive i18n check-encoding examples/bad_encoding/ --require-utf8
 
 # C/C++ソースコード内のハードコードされたCJK文字列を検出
-polydrive i18n detect-hardcoded src/ --lang cpp
+polydrive i18n detect-hardcoded examples/cpp_project/ --lang cpp
 
 # TBX用語集をインポート
-polydrive glossary import terms.tbx
+polydrive glossary import examples/automotive_terms.csv
 
 # 用語の一貫性をチェック
-polydrive glossary check terms.tbx --lang-pair en:zh
+polydrive glossary check examples/automotive_terms.csv --lang-pair en:zh
 
 # 疑似ローカライズされたリソースを生成
-polydrive i18n pseudo-localize locales/en.json --mode expand+cjk
+polydrive i18n pseudo-localize examples/locales/en.json --mode expand+cjk
 
 # 欠陥レポートを分析
-polydrive defect analyze --input bug_report.json
+polydrive defect analyze --input examples/bug_report_zh.json
 
 # Qt翻訳ファイルを検証
 polydrive i18n validate-qt translations/app_zh_CN.ts
@@ -103,7 +112,7 @@ polydrive serve --port 8080
 ## 開発
 
 ```bash
-git clone https://github.com/polydrive/polydrive.git
+git clone https://github.com/BUNSEI1212/polydrive.git
 cd polydrive
 
 # 開発依存関係を含めてインストール

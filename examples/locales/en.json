@@ -1,0 +1,27 @@
+{
+  "dashboard": {
+    "speed": "Speed",
+    "rpm": "RPM",
+    "fuel_level": "Fuel Level",
+    "engine_temp": "Engine Temperature",
+    "odometer": "Odometer",
+    "trip": "Trip",
+    "avg_consumption": "Average Consumption"
+  },
+  "warnings": {
+    "low_fuel": "Low Fuel",
+    "overheat": "Engine Overheating",
+    "tire_pressure": "Tire Pressure Low",
+    "oil_change": "Oil Change Required",
+    "battery": "Battery Low"
+  },
+  "navigation": {
+    "destination": "Enter Destination",
+    "route": "Calculate Route",
+    "eta": "Estimated Arrival",
+    "distance": "Distance",
+    "turn_left": "Turn Left",
+    "turn_right": "Turn Right",
+    "straight": "Continue Straight"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "BUG-2024-0158",
+  "title": "制动能量回收系统在低温环境下异常中断",
+  "description": "在-15°C环境下进行制动能量回收测试时，系统在第三次制动循环后突然停止能量回收，仪表盘显示'Brake Energy Recovery Fault'错误信息。该问题在德方测试报告中记录为'Bremsenergierückgewinnung bei niedriger Temperatur abnormal beendet'，但中文版本缺少关键的环境参数（电池SOC初始值、制动减速度曲线）。",
+  "severity": "high",
+  "component": "brake_energy_recovery",
+  "platform": "EV_Platform_V3",
+  "version": "SW-4.2.1-RC3",
+  "steps_to_reproduce": [
+    "将车辆置于-15°C环境仓中静置8小时",
+    "启动车辆，确认电池SOC为85%",
+    "执行3次标准制动循环（减速度0.3g）",
+    "观察第3次制动后系统状态"
+  ],
+  "expected_result": "系统应持续执行能量回收，仪表盘显示回收功率",
+  "actual_result": "第3次制动后能量回收停止，显示故障码BREC-0x3F",
+  "attachments": ["log_brec_20240115.txt"],
+  "reporter": "张伟",
+  "language": "zh",
+  "created_at": "2024-01-15T09:30:00Z"
+}

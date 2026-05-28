@@ -1,0 +1,12 @@
+en,zh,de,ja,category,note
+brake energy recovery,制动能量回收,Bremsenergierückgewinnung,ブレーキエネルギー回生,technical,
+ADAS,高级驾驶辅助系统,Assistenzsysteme,先進運転支援システム,technical,Abbreviation — do not translate
+ECU,电子控制单元,Steuergerät,ECU,technical,Abbreviation — keep as ECU in all languages
+CAN bus,CAN总线,CAN-Bus,CANバス,technical,
+torque vectoring,扭矩矢量分配, torque vectoring should NOT be translated as 扭矩引导
+tell-tale,指示灯,Kontrollleuchte,インジケーター,regulatory,UNECE R121 term
+HMI,人机界面,Mensch-Maschine-Schnittstelle,HMI,technical,Abbreviation
+SOC,荷电状态,Ladezustand,充電状態,technical,State of Charge
+OTA,空中升级,OTA-Update,OTAアップデート,technical,Over-the-Air
+fault code,故障码,Fehlercode,フォールトコード,technical,
+reproduction steps,复现步骤,Reproduktionsschritte,再現手順,technical,

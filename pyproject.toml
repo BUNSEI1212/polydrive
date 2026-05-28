@@ -67,11 +67,11 @@ ml = [
 polydrive = "polydrive.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/polydrive/polydrive"
-Repository = "https://github.com/polydrive/polydrive"
-Issues = "https://github.com/polydrive/polydrive/issues"
-Documentation = "https://polydrive.readthedocs.io"
-Changelog = "https://github.com/polydrive/polydrive/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/BUNSEI1212/polydrive"
+Repository = "https://github.com/BUNSEI1212/polydrive"
+Issues = "https://github.com/BUNSEI1212/polydrive/issues"
+Documentation = "https://github.com/BUNSEI1212/polydrive#documentation"
+Changelog = "https://github.com/BUNSEI1212/polydrive/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [

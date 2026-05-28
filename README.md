@@ -1,5 +1,9 @@
 # PolyDrive
 
+[![CI](https://github.com/BUNSEI1212/polydrive/actions/workflows/test.yml/badge.svg)](https://github.com/BUNSEI1212/polydrive/actions/workflows/test.yml)
+[![License](https://img.shields.io/badge/license-BSL%201.1-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](pyproject.toml)
+
 **[English](README.md)** | [中文](README.zh-CN.md) | [日本語](README.ja.md)
 
 > Language governance toolkit for multinational automotive testing teams.
@@ -15,7 +19,7 @@ In multinational automotive testing, language isn't a "translation efficiency" p
 - **CI pipelines** when encoding issues cause ghost bugs
 - **Compliance** when HMI text doesn't meet regional regulations
 
-No open-source tool existed to address this gap. Until now.
+Existing tools solve parts of the problem, but few open-source tools connect terminology, defect quality, i18n checks, and traceability specifically for automotive testing workflows. PolyDrive fills this gap.
 
 ## Six Modules
 
@@ -33,26 +37,31 @@ Plus `polydrive serve` to start the REST API server.
 ## Quick Start
 
 ```bash
-# Install
-pip install polydrive
+# Install from source
+git clone https://github.com/BUNSEI1212/polydrive.git
+cd polydrive
+pip install -e .
+
+# Or install from PyPI (when available)
+# pip install polydrive
 
 # Check file encodings
-polydrive i18n check-encoding src/ --require-utf8
+polydrive i18n check-encoding examples/bad_encoding/ --require-utf8
 
 # Detect hardcoded CJK in C/C++ source
-polydrive i18n detect-hardcoded src/ --lang cpp
+polydrive i18n detect-hardcoded examples/cpp_project/ --lang cpp
 
 # Import a TBX glossary
-polydrive glossary import terms.tbx
+polydrive glossary import examples/automotive_terms.csv
 
 # Check terminology consistency
-polydrive glossary check terms.tbx --lang-pair en:zh
+polydrive glossary check examples/automotive_terms.csv --lang-pair en:zh
 
 # Generate pseudo-localized resources
-polydrive i18n pseudo-localize locales/en.json --mode expand+cjk
+polydrive i18n pseudo-localize examples/locales/en.json --mode expand+cjk
 
 # Analyze a defect report
-polydrive defect analyze --input bug_report.json
+polydrive defect analyze --input examples/bug_report_zh.json
 
 # Validate Qt translations
 polydrive i18n validate-qt translations/app_zh_CN.ts
@@ -103,7 +112,7 @@ polydrive serve --port 8080
 ## Development
 
 ```bash
-git clone https://github.com/polydrive/polydrive.git
+git clone https://github.com/BUNSEI1212/polydrive.git
 cd polydrive
 
 # Install with dev dependencies
