@@ -464,6 +464,8 @@ def i18n_detect_hardcoded(
         )
     rprint(table)
     rprint(f"\n[yellow]Found {len(issues)} hardcoded non-ASCII string(s)[/yellow]")
+    # Non-zero exit so the check can gate CI (e.g. the i18n-check Action).
+    raise typer.Exit(1)
 
 
 @i18n_app.command("pseudo-localize")
