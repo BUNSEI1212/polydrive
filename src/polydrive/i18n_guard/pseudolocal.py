@@ -217,14 +217,14 @@ def pseudo_localize(
         encoding="utf-8",
     )
 
-    # Count transformed strings
-    count = _count_strings(transformed) - _count_strings(data)
+    # Count transformed strings (every string leaf was transformed)
+    count = _count_strings(data)
 
     return {
         "source": str(source),
         "output": str(out_path),
         "mode": "+".join(modes),
-        "strings_transformed": abs(count),
+        "strings_transformed": count,
     }
 
 
