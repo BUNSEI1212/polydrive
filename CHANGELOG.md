@@ -2,6 +2,18 @@
 
 All notable changes to PolyDrive will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- `i18n` composite GitHub Action (`.github/actions/i18n-check`) — runs
+  `check-encoding` and `detect-hardcoded` as a reusable PR gate. Installable
+  from PyPI by default, or from a source checkout via inputs.
+- `i18n-guard` workflow that dogfoods the Action on this repository.
+
+### Fixed
+- `polydrive i18n detect-hardcoded` now exits non-zero when hardcoded strings
+  are found, so it can gate CI (previously it printed issues but exited 0).
+
 ## [0.1.0] - 2026-05-28
 
 ### Added

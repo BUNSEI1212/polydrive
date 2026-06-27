@@ -1,0 +1,53 @@
+name: i18n-guard
+
+# Dogfood PolyDrive's own i18n checks on this repository.
+# Uses the bundled composite action (.github/actions/i18n-check) via a source
+# checkout (uv run polydrive) rather than the PyPI default, so it tests the
+# in-tree CLI on every push/PR.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - run: uv sync --group tests
+
+      # Real gate: our own source tree must be clean of encoding/hardcoded issues.
+      - name: Check src/polydrive (must pass)
+        uses: ./.github/actions/i18n-check
+        with:
+          path: src/polydrive
+          polydrive-command: uv run polydrive
+          install-command: "echo 'uv sync already ran above'"
+
+      # Sanity check that the action actually *fails* on known-bad input.
+      # continue-on-error keeps the job green while proving detection works;
+      # a regression here (step unexpectedly passing) means the guard is broken.
+      - name: Verify detection on examples (expected to fail)
+        continue-on-error: true
+        uses: ./.github/actions/i18n-check
+        with:
+          path: examples/bad_encoding
+          polydrive-command: uv run polydrive
+          install-command: "echo 'uv sync already ran above'"
+          # examples/cpp_project has hardcoded CJK on purpose
+          detect-hardcoded: "true"
+
+      - name: Detect hardcoded strings in examples/cpp_project (expected to fail)
+        continue-on-error: true
+        uses: ./.github/actions/i18n-check
+        with:
+          path: examples/cpp_project
+          polydrive-command: uv run polydrive
+          install-command: "echo 'uv sync already ran above'"
+          require-utf8: "false"
+          fail-on-bom: "false"

@@ -178,6 +178,23 @@ polydrive metrics summary --input metrics.json
 - **UNECE R121** — HMI tell-tale and indicator requirements
 - **Gherkin** — Multi-language BDD scenario management (70+ languages)
 
+## CI Integration
+
+PolyDrive ships a reusable GitHub Action to run its i18n checks as a PR gate:
+
+```yaml
+- uses: BUNSEI1212/polydrive/.github/actions/i18n-check@v0.1.0
+  with:
+    path: src
+    # install-command defaults to `pip install polydrive`;
+    # for a source checkout use e.g. `pip install -e .`
+```
+
+It runs `check-encoding` (with `--require-utf8 --fail-on-bom`) and, when C/C++
+sources are present, `detect-hardcoded`. Both exit non-zero on findings, so a
+single check can block a merge. This repository dogfoods the action in
+`.github/workflows/i18n-guard.yml`.
+
 ## Impact & Roadmap
 
 ### Who feels the pain
@@ -250,12 +267,13 @@ at that scale, the workflow is deliberately tool-assisted and process-light:
   [Roadmap](#impact--roadmap) and tracked in milestones before code lands, so
   scope stays bounded. Propose ideas via an issue tagged `discussion` first.
 - **Tooling leverage** — the maintainer leans on automation to multiply
-  effort: a CI matrix (3 OS × 4 Python versions) catches platform regressions,
-  `ruff` + `pytest` guard style and behavior on every change, and PolyDrive
-  itself is [dogfooded](https://en.wikipedia.org/wiki/Eating_your_own_dog_food)
-  — its own CLI checks run against bundled examples as integration tests
-  (`tests/test_examples.py`). AI-assisted development handles routine
-  refactors and test scaffolding so review stays focused on design.
+  effort: a CI matrix catches platform regressions, `ruff` + `pytest` guard
+  style and behavior on every change, and PolyDrive itself is
+  [dogfooded](https://en.wikipedia.org/wiki/Eating_your_own_dog_food) — its
+  own CLI checks run against bundled examples as integration tests
+  (`tests/test_examples.py`) and as a reusable GitHub Action gated on every
+  PR (`.github/workflows/i18n-guard.yml`). AI-assisted development handles
+  routine refactors and test scaffolding so review stays focused on design.
 - **Releases** — versioned per semver; the BSL change-date mechanism converts
   each release to Apache 2.0 after 36 months, keeping old versions usable
   even as the project evolves.
