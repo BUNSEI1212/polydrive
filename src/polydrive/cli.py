@@ -488,10 +488,9 @@ def i18n_pseudo_localize(
         raise typer.Exit(1)
 
     result = pseudo_localize(src_path, mode=mode, output=out_path)
-    out = out_path or src_path.with_stem(src_path.stem + "_pseudo")
-    rprint(f"[green]Generated[/green] pseudo-localized file: {out}")
-    rprint(f"  Mode: {mode}")
-    rprint(f"  Keys processed: {len(result) if isinstance(result, dict) else 'N/A'}")
+    rprint(f"[green]Generated[/green] pseudo-localized file: {result['output']}")
+    rprint(f"  Mode: {result['mode']}")
+    rprint(f"  Strings transformed: {result['strings_transformed']}")
 
 
 @i18n_app.command("validate-qt")
@@ -568,7 +567,42 @@ def defect_analyze(
     analyzer = DefectAnalyzer()
     result = analyzer.analyze(report, glossary=gl)
     result_data = result.model_dump(mode="json")
-    _output(result_data)
+
+    sev_color = {"error": "red", "warning": "yellow", "info": "green"}.get(
+        result.severity, "white"
+    )
+
+    def _print_table() -> None:
+        rprint(
+            f"[bold]Defect report[/bold] {result.report_id}  "
+            f"[{sev_color}]severity: {result.severity}[/{sev_color}]  "
+            f"composite score: [bold]{result.composite_score}[/bold]"
+        )
+
+        table = Table(title="Quality Breakdown")
+        table.add_column("Dimension", style="cyan")
+        table.add_column("Score", justify="right", style="green")
+        for label, value in (
+            ("Field completeness", result.field_completeness),
+            ("Text quality", result.text_quality),
+            ("Reproducibility", result.reproducibility),
+            ("Terminology compliance", result.terminology_compliance),
+        ):
+            table.add_row(label, f"{value}")
+        rprint(table)
+
+        if result.detected_language:
+            rprint(f"Detected language: [cyan]{result.detected_language}[/cyan]")
+        if result.language_mix_warning:
+            rprint(f"[yellow]⚠ {result.language_mix_warning}[/yellow]")
+        if result.missing_fields:
+            rprint(f"[red]Missing fields:[/red] {', '.join(result.missing_fields)}")
+        if result.improvement_suggestions:
+            rprint("[bold]Suggestions:[/bold]")
+            for s in result.improvement_suggestions:
+                rprint(f"  • {s}")
+
+    _output(result_data, _print_table)
 
 
 @defect_app.command("batch")

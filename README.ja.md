@@ -42,8 +42,8 @@ git clone https://github.com/BUNSEI1212/polydrive.git
 cd polydrive
 pip install -e .
 
-# ファイルのエンコーディングをチェック
-polydrive i18n check-encoding examples/bad_encoding/ --require-utf8
+# ファイルのエンコーディングをチェック（非UTF-8とBOM問題を検出）
+polydrive i18n check-encoding examples/bad_encoding/ --require-utf8 --fail-on-bom
 
 # C/C++ソースコード内のハードコードされたCJK文字列を検出
 polydrive i18n detect-hardcoded examples/cpp_project/ --lang cpp
@@ -62,6 +62,66 @@ polydrive serve --port 8080
 ```
 
 詳しくは [examples/README.md](examples/README.md) をご覧ください。
+
+## デモ
+
+以下のすべてのコマンドは、バンドルされた `examples/` データに対して実行したものです。出力は読みやすさのために省略しています — Rich レンダリングされた完全なテーブルを確認するには、ぜひご自身で実行してみてください。
+
+**エンコーディングガード** — 多言語 CI パイプラインを破壊する前に、非 UTF-8 ファイルと BOM マーカーをフラグ付けします:
+
+```
+$ polydrive i18n check-encoding examples/bad_encoding/ --require-utf8 --fail-on-bom
+
+                   Encoding Issues in examples/bad_encoding/
+┌────────────────────┬──────┬──────────┬───────────┬──────────────────────┐
+│ File               │ Line │ Type     │ Detected  │ Details              │
+├────────────────────┼──────┼──────────┼───────────┼──────────────────────┤
+│ gb2312_file.cpp    │    - │ non_utf8 │ gb18030   │ File is gb18030...   │
+│ shift_jis_file.cpp │    - │ non_utf8 │ cp932     │ File is cp932...     │
+│ utf8_with_bom.cpp  │    - │ has_bom  │ utf-8-sig │ File contains a BOM  │
+└────────────────────┴──────┴──────────┴───────────┴──────────────────────┘
+```
+
+**ハードコード文字列の検出** — i18n リソースに存在すべき CJK リテラルが C/C++ ソースに埋め込まれているのを見つけ出します:
+
+```
+$ polydrive i18n detect-hardcoded examples/cpp_project/ --lang cpp
+
+                  Hardcoded Strings in examples/cpp_project/
+┌────────────────────────┬──────┬─────┬──────────────────────────────┐
+│ File                   │ Line │ Col │ Text                         │
+├────────────────────────┼──────┼─────┼──────────────────────────────┤
+│ dashboard.cpp          │    8 │   7 │ 制动液位过低，请及时补充     │
+│ dashboard.cpp          │   10 │  30 │ 制动系统故障，请立即停车检查 │
+│ instrument_cluster.cpp │    6 │   7 │ 点検時期が過ぎています       │
+│ ...                    │      │     │ (9 hardcoded strings total)  │
+└────────────────────────┴──────┴─────┴──────────────────────────────┘
+```
+
+**欠陥レポート品質** — 言語が混在するバグレポートをスコアリングし、欠けている要素を浮き彫りにします:
+
+```
+$ polydrive defect analyze --input examples/bug_report_zh.json
+
+Defect report BUG-2024-0158  severity: info  composite score: 76.6
+        Quality Breakdown
+┌────────────────────────┬───────┐
+│ Dimension              │ Score │
+├────────────────────────┼───────┤
+│ Field completeness     │  87.5 │
+│ Text quality           │  51.4 │
+│ Reproducibility        │  75.0 │
+│ Terminology compliance │ 100.0 │
+└────────────────────────┴───────┘
+Detected language: no
+⚠ Language mixing detected: 48% non-dominant script (dominant: cjk)
+Missing fields: environment
+Suggestions:
+  • Add environment details (OS, version, platform, etc.)
+  • Description is a single sentence — add more detail
+```
+
+**疑似ローカライズ** — 本番の翻訳が届く前に、HMI レイアウトをストレステストします。`"Engine Temperature"` → `"[Êñ夕ïñê 七ê山巳ê尺ä七û尺ê -------]"`（expand+cjk モード）、`examples/locales/en.pseudo.json` に出力されます。
 
 ## その他のコマンド
 
@@ -112,6 +172,31 @@ polydrive metrics summary --input metrics.json
 - **UNECE R121** — HMI警告インジケーター・表示要件
 - **Gherkin** — 多言語BDDシナリオ管理（70以上の言語対応）
 
+## インパクトとロードマップ
+
+### 誰が痛みを抱えているか
+
+PolyDrive が対象とするのは、多国籍自動車**テストチーム**が日常的に直面する摩擦であり、翻訳チーム単独の課題ではありません:
+
+- **分散したテストセル**（DE/CN/JP/US）は各母国語で欠陥を起票しますが、受け手のチームは翻訳によって説明がドリフトしたバグを再現しなければなりません。PolyDrive の `defect` モジュールは再現性をスコアリングし、言語混在をフラグ付けすることで、トリアージ前にギャップを可視化します。
+- **HMI ホモロゲーション**は地域ごとのテルテール/インジケーター規則を満たす必要があります。`trace` は UNECE R121 コンプライアンスをチェックし、手作業の監査スプレッドシートの代わりに ASPICE の言語エビデンスを一回のパスで収集します。
+- **CI パイプライン**は、Shift-JIS や GB2312 のソースファイルが UTF-8 ツールチェーンに紛れ込むとサイレントに破綻します。`i18n check-encoding` はこれを高速で明白な失敗に変えます。
+- **用語ドリフト** は、要件 → テスト → 欠陥の間でトレーサビリティを蝕みます。`glossary` は言語をまたいで一つの正規用語セットを維持します。
+
+PolyDrive は意図的に範囲を絞り、オープンです。用語、欠陥品質、i18n ガード、トレーサビリティを CI ステップに収まる一つの CLI で結びつけます。これは既存ツールの多くがスプレッドシートや専用スクリプトに任せているギャップです。
+
+### ロードマップ
+
+PolyDrive は若いプロジェクト（0.x）です。以下は計画中の方向性であり、対応が始まると GitHub Issues で追跡されます:
+
+- **さらなる規格**: ISO 26262 安全用語、ISO/SAE 21434 サイバーセキュリティ用語、AUTOSAR ARXML 抽出、ISO 9241 HMI エルゴノミクスチェック。
+- **翻訳品質**: `mt` ゲートウェイ上での MQM/DAQP エラー分類スコアリング（単なるパススルー翻訳にとどまらない）。
+- **自動化**: 既存の欠陥/テストコーパスからの用語抽出による用語集のブートストラップ、そしてすべてのチェックを PR で実行するファーストクラスの GitHub Action。
+- **エコシステム**: 用語とハードコード文字列の警告をコミット後ではなく記述中に表示する、言語サーバー / IDE 統合。
+- **リーチ**: さらなる BCP 47 ロケールと、既存 REST API の上に構築した Web UI。
+
+BSL → Apache 2.0 変換（リリースごとに36ヶ月）により、初期の商用利用がメンテナンスを支える一方で、長期的な末尾は完全にオープンであり続けます。
+
 ## 開発
 
 ```bash
@@ -128,6 +213,17 @@ python -m pytest -v
 ruff check .
 ruff format --check .
 ```
+
+## メンテナンスとガバナンス
+
+PolyDrive は現在 **単独メンテナ** が保守しています。この規模で持続可能であり続けるため、ワークフローは意図的にツール支援型でプロセス軽量にしています:
+
+- **イシュートリアージ** — バグと機能要望は [GitHub Issues](https://github.com/BUNSEI1212/polydrive/issues) に集められ、モジュール（`glossary`, `i18n`, `defect`, …）と種別（`bug`, `enhancement`, `standard`）でラベル付けされます。明確な再現手順（入力ファイル + コマンド + 期待値と実績値）があるものがキューの先頭に進みます。
+- **機能計画** — より大きな作業は [ロードマップ](#インパクトとロードマップ) に照らしてスコープし、コード着手前にマイルストーンで追跡することで範囲を境界づけます。アイデアはまず `discussion` タグのイシューで提案してください。
+- **ツールの活用** — メンテナは自動化を活用して作業を増幅します。CI マトリクス（3 OS × 4 Python バージョン）がプラットフォームリグレッションを検出し、`ruff` + `pytest` がすべての変更でスタイルと挙動を守り、PolyDrive 自身も [dogfooded](https://en.wikipedia.org/wiki/Eating_your_own_dog_food) されています — 同梱の examples に対して独自の CLI チェックが統合テスト（`tests/test_examples.py`）として実行されます。AI 支援による開発がルーチンのリファクタリングとテスト足場を扱うことで、レビューは設計に集中できます。
+- **リリース** — semver に従ってバージョン管理。BSL 変更日メカニズムが各リリースを36ヶ月後に Apache 2.0 に変換し、プロジェクトが進化しても古いバージョンが使い続けられるようにします。
+
+貢献は歓迎します — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。商用利用やカスタムの変更日については、ライセンスについて議論するためのイシューを開いてください。
 
 ## ライセンス
 
