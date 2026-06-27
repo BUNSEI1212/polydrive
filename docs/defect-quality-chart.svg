@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif" role="img" aria-label="PolyDrive defect quality scorecard for BUG-2024-0158">
+  <title>PolyDrive defect quality — BUG-2024-0158</title>
+  <desc>Horizontal bar chart of quality scores produced by `polydrive defect analyze` on the bundled example defect report. Composite 76.6, terminology compliance 100.0, field completeness 87.5, reproducibility 75.0, text quality 51.4. Values are from a real run.</desc>
+
+  <rect width="640" height="300" fill="#ffffff"/>
+
+  <!-- Headings -->
+  <text x="16" y="26" font-size="15" font-weight="700" fill="#0f172a">Defect quality — BUG-2024-0158</text>
+  <text x="16" y="46" font-size="11" fill="#6b7280" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">polydrive defect analyze --input examples/bug_report_zh.json</text>
+
+  <!-- Gridlines (0 and 100) -->
+  <line x1="180" y1="62" x2="180" y2="262" stroke="#e5e7eb" stroke-width="1"/>
+  <line x1="600" y1="62" x2="600" y2="262" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="180" y="276" font-size="9" fill="#9ca3af" text-anchor="middle">0</text>
+  <text x="600" y="276" font-size="9" fill="#9ca3af" text-anchor="middle">100</text>
+
+  <!-- Row 1: Composite score (headline) 76.6 -->
+  <text x="170" y="81" font-size="12" font-weight="600" fill="#1f2937" text-anchor="end" dominant-baseline="middle">Composite score</text>
+  <rect x="180" y="70" width="322" height="22" fill="#2563eb" rx="2"/>
+  <text x="510" y="81" font-size="12" font-weight="700" fill="#1f2937" dominant-baseline="middle">76.6</text>
+
+  <!-- Row 2: Terminology compliance 100.0 -->
+  <text x="170" y="121" font-size="12" fill="#374151" text-anchor="end" dominant-baseline="middle">Terminology compliance</text>
+  <rect x="180" y="110" width="420" height="22" fill="#93c5fd" rx="2"/>
+  <text x="608" y="121" font-size="12" fill="#374151" dominant-baseline="middle">100.0</text>
+
+  <!-- Row 3: Field completeness 87.5 -->
+  <text x="170" y="161" font-size="12" fill="#374151" text-anchor="end" dominant-baseline="middle">Field completeness</text>
+  <rect x="180" y="150" width="368" height="22" fill="#93c5fd" rx="2"/>
+  <text x="556" y="161" font-size="12" fill="#374151" dominant-baseline="middle">87.5</text>
+
+  <!-- Row 4: Reproducibility 75.0 -->
+  <text x="170" y="201" font-size="12" fill="#374151" text-anchor="end" dominant-baseline="middle">Reproducibility</text>
+  <rect x="180" y="190" width="315" height="22" fill="#93c5fd" rx="2"/>
+  <text x="503" y="201" font-size="12" fill="#374151" dominant-baseline="middle">75.0</text>
+
+  <!-- Row 5: Text quality 51.4 -->
+  <text x="170" y="241" font-size="12" fill="#374151" text-anchor="end" dominant-baseline="middle">Text quality</text>
+  <rect x="180" y="230" width="216" height="22" fill="#93c5fd" rx="2"/>
+  <text x="404" y="241" font-size="12" fill="#374151" dominant-baseline="middle">51.4</text>
+
+  <!-- Footnote -->
+  <text x="16" y="294" font-size="9" fill="#9ca3af">Rendered from real CLI output (see README Demo section). Scores 0–100, higher is better.</text>
+</svg>

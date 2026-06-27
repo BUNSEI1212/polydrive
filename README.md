@@ -129,6 +129,23 @@ Suggestions:
 `"Engine Temperature"` → `"[Êñ夕ïñê 七ê山巳ê尺ä七û尺ê -------]"` (expand+cjk mode),
 written to `examples/locales/en.pseudo.json`.
 
+## Screenshots
+
+A visual of `polydrive defect analyze` scoring the bundled Chinese/German
+defect report (`examples/bug_report_zh.json`) — every value below comes from a
+real run, not a mock:
+
+![Defect quality scorecard](docs/defect-quality-chart.svg)
+
+The full Rich-rendered tables for every command are in the [Demo](#demo)
+section above. To capture your own animated demo as a GIF:
+
+```bash
+# Record a terminal session, then render to GIF (requires asciinema + agg)
+asciinema rec demo.cast --command "polydrive defect analyze --input examples/bug_report_zh.json"
+agg demo.cast demo.gif
+```
+
 ## More Commands
 
 ```bash
@@ -280,6 +297,40 @@ at that scale, the workflow is deliberately tool-assisted and process-light:
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). For
 commercial use or a custom change-date, open an issue to discuss licensing.
+
+## My Role as Maintainer
+
+I'm the solo maintainer of PolyDrive and own the full lifecycle — architecture,
+implementation, review, and release — with a workflow tuned for one person:
+
+- **Solo development** — I design and implement across all six modules myself,
+  keeping the surface small and consistent so a single person can hold the whole
+  system in mind. Every change ships through a branch + pull request, even when
+  I'm the only reviewer, so the history stays auditable.
+- **Bug fixing, evidence-first** — when something breaks I reproduce it, find
+  the root cause before touching code, and add a regression test. Recent
+  examples: `defect analyze` silently printed nothing in text mode (#6), and
+  `detect-hardcoded` exited 0 on findings — which would have neutered the CI
+  gate (#7). Both fixed test-first (RED → GREEN).
+- **Feature planning** — the [Roadmap](#impact--roadmap) drives priorities;
+  larger work becomes a tracked GitHub issue with context, open questions, and
+  acceptance criteria *before* any code is written (e.g. #3, #5), and a triage
+  comment sets priority and a target milestone.
+- **Automation as leverage** — a solo maintainer can't review by hand, so I let
+  tools do it: `ruff` + `pytest` on every change, a CI matrix for platform
+  coverage, and a reusable GitHub Action that dogfoods PolyDrive's own checks on
+  every PR. PolyDrive checks its own examples.
+- **AI-assisted development** — I use AI (Claude Code) to accelerate routine
+  work: drafting tests, refactors, exploring the codebase, and producing docs.
+  I stay the reviewer: I verify every change against real command output and
+  tests before merging, and I disclose AI co-authorship in commit messages. AI
+  extends my reach; it doesn't replace my judgment.
+- **Releases** — semver tags with a BSL → Apache 2.0 change-date, so old
+  versions stay usable. `v0.1.0` is out.
+
+I maintain this because the gap — connecting terminology, defect quality, i18n,
+and traceability for multinational automotive testing — isn't well served by
+existing open source.
 
 ## License
 
