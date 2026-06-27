@@ -1,0 +1,74 @@
+name: PolyDrive i18n Check
+description: Run PolyDrive encoding and hardcoded-CJK checks on a path. Useful as a PR gate for multilingual or i18n-sensitive projects.
+author: PolyDrive Contributors
+branding:
+  icon: check-circle
+  color: blue
+
+inputs:
+  path:
+    description: File or directory to check.
+    required: false
+    default: "."
+  require-utf8:
+    description: Fail if any file is not UTF-8.
+    required: false
+    default: "true"
+  fail-on-bom:
+    description: Fail if a Byte Order Mark (BOM) is detected.
+    required: false
+    default: "true"
+  detect-hardcoded:
+    description: Also run hardcoded CJK-string detection on C/C++ sources.
+    required: false
+    default: "true"
+  hardcoded-lang:
+    description: Language for hardcoded-string detection (c or cpp).
+    required: false
+    default: "cpp"
+  install-command:
+    description: >-
+      Command that installs PolyDrive. Defaults to PyPI (`pip install polydrive`).
+      For a source checkout use e.g. `uv sync --group tests` or `pip install -e .`.
+    required: false
+    default: "pip install polydrive"
+  polydrive-command:
+    description: >-
+      Command prefix used to invoke PolyDrive. Defaults to `polydrive`.
+      For a source checkout managed by uv use `uv run polydrive`.
+    required: false
+    default: "polydrive"
+
+runs:
+  using: composite
+  steps:
+    - name: Install PolyDrive
+      shell: bash
+      run: ${{ inputs.install-command }}
+
+    - name: Check file encodings
+      shell: bash
+      run: |
+        set -euo pipefail
+        args=()
+        [ "${{ inputs.require-utf8 }}" = "true" ] && args+=(--require-utf8)
+        [ "${{ inputs.fail-on-bom }}" = "true" ] && args+=(--fail-on-bom)
+        ${{ inputs.polydrive-command }} i18n check-encoding "${{ inputs.path }}" "${args[@]}"
+
+    - name: Detect hardcoded CJK strings
+      if: ${{ inputs.detect-hardcoded == 'true' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        # Only run when C/C++ sources are present in the target path;
+        # otherwise the check is a no-op and would just add noise.
+        if find "${{ inputs.path }}" -type f \
+            \( -name '*.c' -o -name '*.cc' -o -name '*.cpp' -o -name '*.cxx' \
+               -o -name '*.h' -o -name '*.hh' -o -name '*.hpp' -o -name '*.hxx' \) \
+            -not -path '*/.venv/*' -not -path '*/node_modules/*' \
+            -print -quit | grep -q .; then
+          ${{ inputs.polydrive-command }} i18n detect-hardcoded "${{ inputs.path }}" \
+            --lang "${{ inputs.hardcoded-lang }}"
+        else
+          echo "No C/C++ sources under '${{ inputs.path }}'; skipping hardcoded-string detection."
+        fi

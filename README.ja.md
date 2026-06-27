@@ -172,6 +172,20 @@ polydrive metrics summary --input metrics.json
 - **UNECE R121** — HMI警告インジケーター・表示要件
 - **Gherkin** — 多言語BDDシナリオ管理（70以上の言語対応）
 
+## CI 連携
+
+PolyDrive は、i18n チェックを PR ゲートとして実行する再利用可能な GitHub Action を同梱しています：
+
+```yaml
+- uses: BUNSEI1212/polydrive/.github/actions/i18n-check@v0.1.0
+  with:
+    path: src
+    # install-command のデフォルトは `pip install polydrive`。
+    # ソースチェックアウトの場合は例えば `pip install -e .` を使用します
+```
+
+`check-encoding`（`--require-utf8 --fail-on-bom` 付き）を実行し、C/C++ ソースが存在する場合は `detect-hardcoded` も実行します。いずれも問題を検出すると非ゼロで終了するため、単一のチェックでマージをブロックできます。このリポジトリは `.github/workflows/i18n-guard.yml` でこの Action をドッグフードしています。
+
 ## インパクトとロードマップ
 
 ### 誰が痛みを抱えているか
@@ -220,7 +234,7 @@ PolyDrive は現在 **単独メンテナ** が保守しています。この規�
 
 - **イシュートリアージ** — バグと機能要望は [GitHub Issues](https://github.com/BUNSEI1212/polydrive/issues) に集められ、モジュール（`glossary`, `i18n`, `defect`, …）と種別（`bug`, `enhancement`, `standard`）でラベル付けされます。明確な再現手順（入力ファイル + コマンド + 期待値と実績値）があるものがキューの先頭に進みます。
 - **機能計画** — より大きな作業は [ロードマップ](#インパクトとロードマップ) に照らしてスコープし、コード着手前にマイルストーンで追跡することで範囲を境界づけます。アイデアはまず `discussion` タグのイシューで提案してください。
-- **ツールの活用** — メンテナは自動化を活用して作業を増幅します。CI マトリクス（3 OS × 4 Python バージョン）がプラットフォームリグレッションを検出し、`ruff` + `pytest` がすべての変更でスタイルと挙動を守り、PolyDrive 自身も [dogfooded](https://en.wikipedia.org/wiki/Eating_your_own_dog_food) されています — 同梱の examples に対して独自の CLI チェックが統合テスト（`tests/test_examples.py`）として実行されます。AI 支援による開発がルーチンのリファクタリングとテスト足場を扱うことで、レビューは設計に集中できます。
+- **ツールの活用** — メンテナは自動化を活用して作業を増幅します。CI マトリクスがプラットフォームリグレッションを検出し、`ruff` + `pytest` がすべての変更でスタイルと挙動を守り、PolyDrive 自身も [dogfooded](https://en.wikipedia.org/wiki/Eating_your_own_dog_food) されています — 同梱の examples に対して独自の CLI チェックが統合テスト（`tests/test_examples.py`）として実行され、さらに再利用可能な GitHub Action としてすべての PR でゲート（`.github/workflows/i18n-guard.yml`）されています。AI 支援による開発がルーチンのリファクタリングとテスト足場を扱うことで、レビューは設計に集中できます。
 - **リリース** — semver に従ってバージョン管理。BSL 変更日メカニズムが各リリースを36ヶ月後に Apache 2.0 に変換し、プロジェクトが進化しても古いバージョンが使い続けられるようにします。
 
 貢献は歓迎します — [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。商用利用やカスタムの変更日については、ライセンスについて議論するためのイシューを開いてください。

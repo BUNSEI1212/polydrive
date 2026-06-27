@@ -172,6 +172,20 @@ polydrive metrics summary --input metrics.json
 - **UNECE R121** -- HMI 告警指示灯法规要求
 - **Gherkin** -- 多语言 BDD 场景管理（支持 70+ 种语言）
 
+## CI 集成
+
+PolyDrive 提供一个可复用的 GitHub Action，将 i18n 检查作为 PR 门禁运行：
+
+```yaml
+- uses: BUNSEI1212/polydrive/.github/actions/i18n-check@v0.1.0
+  with:
+    path: src
+    # install-command 默认为 `pip install polydrive`；
+    # 对源码检出可使用例如 `pip install -e .`
+```
+
+它会运行 `check-encoding`（带 `--require-utf8 --fail-on-bom`），并在存在 C/C++ 源码时运行 `detect-hardcoded`。两者在检出问题时均以非零状态退出，因此一次检查即可阻断合并。本仓库在 `.github/workflows/i18n-guard.yml` 中 dogfood 该 Action。
+
 ## 影响与路线图
 
 ### 谁在承受这份痛点
@@ -221,7 +235,7 @@ PolyDrive 目前由**单人维护者**维护。为了在这种规模下保持可
 - **Issue 分流** — bug 与功能请求进入
   [GitHub Issues](https://github.com/BUNSEI1212/polydrive/issues)，并按模块（`glossary`、`i18n`、`defect`……）和类型（`bug`、`enhancement`、`standard`）打标签。一份清晰的复现说明（输入文件 + 命令 + 预期 vs 实际）会让 issue 排到队列最前。
 - **功能规划** — 较大的工作会对照[路线图](#影响与路线图)界定范围，并在代码落地前通过里程碑跟踪，从而保持范围有界。请先通过打了 `discussion` 标签的 issue 提出想法。
-- **工具杠杆** — 维护者借助自动化放大产出：CI 矩阵（3 OS × 4 Python 版本）捕获平台回归，`ruff` + `pytest` 在每次变更时守护风格与行为，PolyDrive 自身也经过[dogfooded](https://en.wikipedia.org/wiki/Eating_your_own_dog_food)——它自己的 CLI 检查会针对内置示例作为集成测试运行（`tests/test_examples.py`）。AI 辅助开发处理常规重构与测试脚手架，让评审聚焦于设计。
+- **工具杠杆** — 维护者借助自动化放大产出：CI 矩阵捕获平台回归，`ruff` + `pytest` 在每次变更时守护风格与行为，PolyDrive 自身也经过[dogfooded](https://en.wikipedia.org/wiki/Eating_your_own_dog_food)——它自己的 CLI 检查会针对内置示例作为集成测试运行（`tests/test_examples.py`），并作为可复用的 GitHub Action 在每个 PR 上把关（`.github/workflows/i18n-guard.yml`）。AI 辅助开发处理常规重构与测试脚手架，让评审聚焦于设计。
 - **发布** — 按 semver 进行版本管理；BSL 转换日期机制在每个版本发布 36 个月后将其转为 Apache 2.0，即使项目演进，旧版本仍可使用。
 
 欢迎贡献——参见 [CONTRIBUTING.md](CONTRIBUTING.md)。如需商业使用或自定义转换日期，请开一个 issue 讨论授权事宜。
