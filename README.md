@@ -42,8 +42,8 @@ git clone https://github.com/BUNSEI1212/polydrive.git
 cd polydrive
 pip install -e .
 
-# Check file encodings
-polydrive i18n check-encoding examples/bad_encoding/ --require-utf8
+# Check file encodings (detect non-UTF-8 and BOM issues)
+polydrive i18n check-encoding examples/bad_encoding/ --require-utf8 --fail-on-bom
 
 # Detect hardcoded CJK in C/C++ source
 polydrive i18n detect-hardcoded examples/cpp_project/ --lang cpp
@@ -62,6 +62,72 @@ polydrive serve --port 8080
 ```
 
 See [examples/README.md](examples/README.md) for detailed demo instructions.
+
+## Demo
+
+Every command below was run against the bundled `examples/` data. Output shown is
+abridged for readability — run it yourself to see the full Rich-rendered tables.
+
+**Encoding guard** — flag non-UTF-8 files and BOM markers before they break a
+multilingual CI pipeline:
+
+```
+$ polydrive i18n check-encoding examples/bad_encoding/ --require-utf8 --fail-on-bom
+
+                   Encoding Issues in examples/bad_encoding/
+┌────────────────────┬──────┬──────────┬───────────┬──────────────────────┐
+│ File               │ Line │ Type     │ Detected  │ Details              │
+├────────────────────┼──────┼──────────┼───────────┼──────────────────────┤
+│ gb2312_file.cpp    │    - │ non_utf8 │ gb18030   │ File is gb18030...   │
+│ shift_jis_file.cpp │    - │ non_utf8 │ cp932     │ File is cp932...     │
+│ utf8_with_bom.cpp  │    - │ has_bom  │ utf-8-sig │ File contains a BOM  │
+└────────────────────┴──────┴──────────┴───────────┴──────────────────────┘
+```
+
+**Hardcoded-string detection** — find CJK literals embedded in C/C++ source that
+should live in i18n resources:
+
+```
+$ polydrive i18n detect-hardcoded examples/cpp_project/ --lang cpp
+
+                  Hardcoded Strings in examples/cpp_project/
+┌────────────────────────┬──────┬─────┬──────────────────────────────┐
+│ File                   │ Line │ Col │ Text                         │
+├────────────────────────┼──────┼─────┼──────────────────────────────┤
+│ dashboard.cpp          │    8 │   7 │ 制动液位过低，请及时补充     │
+│ dashboard.cpp          │   10 │  30 │ 制动系统故障，请立即停车检查 │
+│ instrument_cluster.cpp │    6 │   7 │ 点検時期が過ぎています       │
+│ ...                    │      │     │ (9 hardcoded strings total)  │
+└────────────────────────┴──────┴─────┴──────────────────────────────┘
+```
+
+**Defect-report quality** — score a cross-language bug report and surface what's
+missing:
+
+```
+$ polydrive defect analyze --input examples/bug_report_zh.json
+
+Defect report BUG-2024-0158  severity: info  composite score: 76.6
+        Quality Breakdown
+┌────────────────────────┬───────┐
+│ Dimension              │ Score │
+├────────────────────────┼───────┤
+│ Field completeness     │  87.5 │
+│ Text quality           │  51.4 │
+│ Reproducibility        │  75.0 │
+│ Terminology compliance │ 100.0 │
+└────────────────────────┴───────┘
+Detected language: no
+⚠ Language mixing detected: 48% non-dominant script (dominant: cjk)
+Missing fields: environment
+Suggestions:
+  • Add environment details (OS, version, platform, etc.)
+  • Description is a single sentence — add more detail
+```
+
+**Pseudo-localization** — stress-test HMI layouts before real translation lands.
+`"Engine Temperature"` → `"[Êñ夕ïñê 七ê山巳ê尺ä七û尺ê -------]"` (expand+cjk mode),
+written to `examples/locales/en.pseudo.json`.
 
 ## More Commands
 
@@ -112,6 +178,47 @@ polydrive metrics summary --input metrics.json
 - **UNECE R121** — HMI tell-tale and indicator requirements
 - **Gherkin** — Multi-language BDD scenario management (70+ languages)
 
+## Impact & Roadmap
+
+### Who feels the pain
+
+PolyDrive targets the friction that multinational automotive **testing teams**
+hit daily — not translation teams in isolation:
+
+- **Distributed test cells** (DE/CN/JP/US) file defects in their native language;
+  the receiving team must reproduce a bug whose description has drifted in
+  translation. PolyDrive's `defect` module scores reproducibility and flags
+  language mixing so gaps are visible before triage.
+- **HMI homologation** must meet regional tell-tale/indicator rules. `trace`
+  checks UNECE R121 compliance and collects ASPICE language evidence in one
+  pass instead of a manual audit spreadsheet.
+- **CI pipelines** break silently when a Shift-JIS or GB2312 source file lands in
+  a UTF-8 toolchain. `i18n check-encoding` turns that into a fast, loud failure.
+- **Terminology drift** across requirements → tests → defects erodes
+  traceability. `glossary` keeps one canonical term set across languages.
+
+PolyDrive is intentionally narrow and open: it connects terminology, defect
+quality, i18n guarding, and traceability in one CLI that fits a CI step — a gap
+most existing tools leave to spreadsheets and bespoke scripts.
+
+### Roadmap
+
+PolyDrive is young (0.x). Planned directions, tracked as GitHub issues when
+picked up:
+
+- **More standards**: ISO 26262 safety terminology, ISO/SAE 21434 cybersecurity
+  terms, AUTOSAR ARXML extraction, ISO 9241 HMI ergonomics checks.
+- **Translation quality**: MQM/DAQP error typology scoring on the `mt` gateway,
+  not just pass-through translation.
+- **Automation**: terminology extraction from existing defect/test corpora to
+  bootstrap a glossary, and a first-class GitHub Action so every check runs on PRs.
+- **Ecosystem**: language-server / IDE integrations so terminology and
+  hardcoded-string warnings surface while writing, not after commit.
+- **Reach**: more BCP 47 locales and a web UI on top of the existing REST API.
+
+The BSL → Apache 2.0 conversion (36 months per release) keeps the long tail
+fully open while early commercial use funds maintenance.
+
 ## Development
 
 ```bash
@@ -128,6 +235,33 @@ python -m pytest -v
 ruff check .
 ruff format --check .
 ```
+
+## Maintenance & Governance
+
+PolyDrive is currently maintained by a **solo maintainer**. To stay sustainable
+at that scale, the workflow is deliberately tool-assisted and process-light:
+
+- **Issue triage** — bugs and feature requests land in
+  [GitHub Issues](https://github.com/BUNSEI1212/polydrive/issues) and are
+  labelled by module (`glossary`, `i18n`, `defect`, …) and kind
+  (`bug`, `enhancement`, `standard`). A clear reproduction (input file +
+  command + expected vs. actual) moves an issue to the front of the queue.
+- **Feature planning** — larger work is scoped against the
+  [Roadmap](#impact--roadmap) and tracked in milestones before code lands, so
+  scope stays bounded. Propose ideas via an issue tagged `discussion` first.
+- **Tooling leverage** — the maintainer leans on automation to multiply
+  effort: a CI matrix (3 OS × 4 Python versions) catches platform regressions,
+  `ruff` + `pytest` guard style and behavior on every change, and PolyDrive
+  itself is [dogfooded](https://en.wikipedia.org/wiki/Eating_your_own_dog_food)
+  — its own CLI checks run against bundled examples as integration tests
+  (`tests/test_examples.py`). AI-assisted development handles routine
+  refactors and test scaffolding so review stays focused on design.
+- **Releases** — versioned per semver; the BSL change-date mechanism converts
+  each release to Apache 2.0 after 36 months, keeping old versions usable
+  even as the project evolves.
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). For
+commercial use or a custom change-date, open an issue to discuss licensing.
 
 ## License
 

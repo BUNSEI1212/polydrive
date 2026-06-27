@@ -7,7 +7,7 @@ Runnable demo data for PolyDrive CLI commands.
 ### 1. Check File Encodings
 
 ```bash
-polydrive i18n check-encoding examples/bad_encoding/ --require-utf8
+polydrive i18n check-encoding examples/bad_encoding/ --require-utf8 --fail-on-bom
 ```
 
 Detects encoding mismatches, BOM markers, and non-UTF-8 files.
