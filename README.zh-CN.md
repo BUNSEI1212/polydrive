@@ -123,6 +123,20 @@ Suggestions:
 
 **伪本地化** — 在真实翻译落地之前，先压测 HMI 布局。`"Engine Temperature"` → `"[Êñ夕ïñê 七ê山巳ê尺ä七û尺ê -------]"`（expand+cjk 模式），写入 `examples/locales/en.pseudo.json`。
 
+## 截图
+
+`polydrive defect analyze` 对内置的中/德混合缺陷报告（`examples/bug_report_zh.json`）的评分可视化——以下每个数值均来自真实运行，非 mock：
+
+![缺陷质量评分卡](docs/defect-quality-chart.svg)
+
+每条命令的完整 Rich 渲染表格见上方[演示](#演示)小节。如需录制自己的动态演示 GIF：
+
+```bash
+# 录制终端会话，再渲染为 GIF（需要 asciinema + agg）
+asciinema rec demo.cast --command "polydrive defect analyze --input examples/bug_report_zh.json"
+agg demo.cast demo.gif
+```
+
 ## 更多命令
 
 ```bash
@@ -239,6 +253,19 @@ PolyDrive 目前由**单人维护者**维护。为了在这种规模下保持可
 - **发布** — 按 semver 进行版本管理；BSL 转换日期机制在每个版本发布 36 个月后将其转为 Apache 2.0，即使项目演进，旧版本仍可使用。
 
 欢迎贡献——参见 [CONTRIBUTING.md](CONTRIBUTING.md)。如需商业使用或自定义转换日期，请开一个 issue 讨论授权事宜。
+
+## 我的维护者角色
+
+我是 PolyDrive 的单人维护者，负责完整的生命周期——架构、实现、评审与发布——并采用一套为单人量身定制的工作流：
+
+- **单人开发** — 我独立设计并实现全部六大模块，保持接口面小而一致，让一个人也能把整套系统装进脑子。每一次变更都通过分支 + Pull Request 推进，即使我是唯一的评审者，也让历史保持可审计。
+- **Bug 修复，证据优先** — 出问题时我先复现，在动手改代码前找到根因，并补一条回归测试。最近的例子：`defect analyze` 在文本模式下静默地什么都不输出（#6），以及 `detect-hardcoded` 在检出问题时仍以 0 退出——这会让 CI 门禁形同虚设（#7）。两者都以测试先行的方式修复（RED → GREEN）。
+- **功能规划** — [路线图](#影响与路线图)驱动优先级；较大的工作在写任何代码之前先变成一个带有上下文、开放问题与验收标准的受跟踪 GitHub issue（例如 #3、#5），并由一条分流评论设定优先级与目标里程碑。
+- **自动化作为杠杆** — 单人维护者无法手工评审，于是我让工具代劳：每次变更都跑 `ruff` + `pytest`，用 CI 矩阵覆盖各平台，并使用一个可复用的 GitHub Action 在每个 PR 上 dogfood PolyDrive 自身的检查。PolyDrive 检查它自己的示例。
+- **AI 辅助开发** — 我使用 AI（Claude Code）加速常规工作：起草测试、重构、探索代码库、产出文档。我始终担任评审者：合并前我会对照真实命令输出与测试验证每一处变更，并在提交信息中披露 AI 共同署名。AI 拓展了我的触达范围，但不替代我的判断。
+- **发布** — 按 semver 打标签，并附带 BSL → Apache 2.0 转换日期，让旧版本保持可用。`v0.1.0` 已发布。
+
+我维护这个项目，是因为这个空白——为跨国汽车测试把术语、缺陷质量、i18n 与追溯性连接起来——尚未被现有开源工具很好地满足。
 
 ## 许可证
 
